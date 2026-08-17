@@ -5,6 +5,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Bounce2.h>
+#include <Preferences.h>
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -12,11 +13,11 @@
 #define SCREEN_ADDRESS 0x3C
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
 BleKeyboard bleKeyboard("Macro Deck", "Custom", 100);
-
 ESP32Encoder encoder;
-long oldPosition  = 0;
+Preferences preferences;
+
+long oldPosition = 0;
 
 // Pins
 const int SWITCH_PINS[8] = {13, 12, 14, 27, 26, 25, 33, 32};
@@ -36,18 +37,55 @@ State currentState = STATE_IDLE;
 // Telemetry Data
 int cpu_temp = 0, cpu_usage = 0, gpu_temp = 0, gpu_usage = 0;
 
-// Animation Data
+// Action Data
 unsigned long actionStartTime = 0;
-const unsigned long ACTION_DURATION = 1000;
-int lastActionKeyIndex = -1;
+const unsigned long ACTION_DURATION = 800;
+int lastActionKeyIndex = -1; // -1: mute
 
-// Menu Data
-int brightness = 255; // 0 to 255
+// Config Data
+int brightness = 255;
+int animMode = 0; // 0: Circles, 1: Flash, 2: Minimal
+int encMode = 0;  // 0: Volume, 1: Vertical Arrows, 2: Horizontal Arrows
+
+void saveConfig() {
+  preferences.begin("macrodeck", false);
+  preferences.putInt("animMode", animMode);
+  preferences.putInt("encMode", encMode);
+  preferences.putInt("brightness", brightness);
+  preferences.end();
+}
+
+void loadConfig() {
+  preferences.begin("macrodeck", true);
+  animMode = preferences.getInt("animMode", 0);
+  encMode = preferences.getInt("encMode", 0);
+  brightness = preferences.getInt("brightness", 255);
+  preferences.end();
+}
 
 void parseSerialData() {
   if (Serial.available() > 0) {
     String data = Serial.readStringUntil('\n');
-    // Format: C:45,U:10,G:60,V:50
+    data.trim();
+    
+    // Config commands from PC App (e.g. CFG:ANIM:1)
+    if (data.startsWith("CFG:")) {
+      if (data.startsWith("CFG:ANIM:")) {
+        animMode = data.substring(9).toInt();
+        saveConfig();
+      } else if (data.startsWith("CFG:ENC:")) {
+        encMode = data.substring(8).toInt();
+        saveConfig();
+      } else if (data.startsWith("CFG:BRT:")) {
+        brightness = data.substring(8).toInt();
+        display.ssd1306_command(SSD1306_SETCONTRAST);
+        display.ssd1306_command(brightness);
+        saveConfig();
+      }
+      return;
+    }
+    
+    // Telemetry: C:45,U:10,G:60,V:50
     if (data.indexOf("C:") != -1 && data.indexOf("G:") != -1) {
       sscanf(data.c_str(), "C:%d,U:%d,G:%d,V:%d", &cpu_temp, &cpu_usage, &gpu_temp, &gpu_usage);
     }
@@ -56,7 +94,6 @@ void parseSerialData() {
 
 void drawIdle() {
   display.clearDisplay();
-  
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   
@@ -78,31 +115,54 @@ void drawIdle() {
 
 void drawAction() {
   display.clearDisplay();
-  
   unsigned long elapsed = millis() - actionStartTime;
-  // Animation: Expanding circles
-  int maxRadius = 40;
-  int radius = (elapsed * maxRadius) / ACTION_DURATION;
   
-  display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius, SSD1306_WHITE);
-  if (radius > 5) {
-    display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius - 5, SSD1306_WHITE);
+  if (animMode == 0) {
+    // Mode 0: Expanding Circles
+    int maxRadius = 40;
+    int radius = (elapsed * maxRadius) / ACTION_DURATION;
+    display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius, SSD1306_WHITE);
+    if (radius > 5) display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius - 5, SSD1306_WHITE);
+    
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    if (lastActionKeyIndex == -1) {
+      display.setCursor(20, 25); display.print("  MUTE  ");
+    } else {
+      display.setCursor(15, 25); display.print(" KEY F"); display.print(13 + lastActionKeyIndex);
+    }
+    
+  } else if (animMode == 1) {
+    // Mode 1: Flashing Box
+    if ((elapsed / 100) % 2 == 0) {
+      display.fillRect(10, 15, 108, 34, SSD1306_WHITE);
+      display.setTextColor(SSD1306_BLACK);
+    } else {
+      display.drawRect(10, 15, 108, 34, SSD1306_WHITE);
+      display.setTextColor(SSD1306_WHITE);
+    }
+    display.setTextSize(2);
+    if (lastActionKeyIndex == -1) {
+      display.setCursor(25, 25); display.print(" MUTE ");
+    } else {
+      display.setCursor(20, 25); display.print("KEY F"); display.print(13 + lastActionKeyIndex);
+    }
+    
+  } else if (animMode == 2) {
+    // Mode 2: Minimalist, just fast text (ends faster)
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    if (lastActionKeyIndex == -1) {
+      display.setCursor(40, 25); display.print("MUTE");
+    } else {
+      display.setCursor(25, 25); display.print("F"); display.print(13 + lastActionKeyIndex); display.print(" HIT");
+    }
   }
 
-  display.setTextSize(2);
-  display.setTextColor(SSD1306_WHITE);
-  
-  if (lastActionKeyIndex == -1) {
-    display.setCursor(20, 25);
-    display.print("  MUTE  ");
-  } else {
-    display.setCursor(15, 25);
-    display.print(" KEY F"); display.print(13 + lastActionKeyIndex);
-  }
-  
   display.display();
   
-  if (elapsed > ACTION_DURATION) {
+  unsigned long duration = (animMode == 2) ? 400 : ACTION_DURATION;
+  if (elapsed > duration) {
     currentState = STATE_IDLE;
   }
 }
@@ -113,43 +173,47 @@ void drawMenu() {
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.println("-- SETTINGS MENU --");
-  
   display.setCursor(0, 20);
   display.println("Set Brightness:");
   
-  // Draw bar
   display.drawRect(10, 40, 100, 10, SSD1306_WHITE);
   int w = map(brightness, 0, 255, 0, 100);
   display.fillRect(10, 40, w, 10, SSD1306_WHITE);
-  
   display.display();
+}
+
+void handleEncoderAction(bool forward) {
+  if (!bleKeyboard.isConnected()) return;
+  
+  if (encMode == 0) { // Volume
+    bleKeyboard.write(forward ? KEY_MEDIA_VOLUME_UP : KEY_MEDIA_VOLUME_DOWN);
+  } else if (encMode == 1) { // Up/Down Arrows
+    bleKeyboard.write(forward ? KEY_DOWN_ARROW : KEY_UP_ARROW);
+  } else if (encMode == 2) { // Left/Right Arrows
+    bleKeyboard.write(forward ? KEY_RIGHT_ARROW : KEY_LEFT_ARROW);
+  }
 }
 
 void setup() {
   Serial.begin(115200);
+  loadConfig();
   
-  // OLED Init (SDA=21, SCL=22 is default on ESP32)
   Wire.begin();
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
   }
   
-  // Set default brightness
   display.ssd1306_command(SSD1306_SETCONTRAST);
   display.ssd1306_command(brightness);
-  
   display.clearDisplay();
   display.display();
   
-  // Ble Keyboard Init
   bleKeyboard.begin();
   
-  // Encoder Init
   ESP32Encoder::useInternalWeakPullResistors = UP;
   encoder.attachHalfQuad(18, 19);
   encoder.setCount(0);
   
-  // Buttons Init
   encoderBtn.attach(ENCODER_BTN_PIN, INPUT_PULLUP);
   encoderBtn.interval(25);
   encoderBtn.setPressedState(LOW);
@@ -162,16 +226,12 @@ void setup() {
 }
 
 void loop() {
-  // Update buttons
   encoderBtn.update();
-  for(int i = 0; i < 8; i++) {
-    switches[i].update();
-  }
+  for(int i = 0; i < 8; i++) switches[i].update();
   
   if (currentState == STATE_IDLE || currentState == STATE_ACTION) {
     parseSerialData();
     
-    // Check Switches
     for(int i = 0; i < 8; i++) {
       if(switches[i].pressed()) {
         if(bleKeyboard.isConnected()) {
@@ -185,26 +245,18 @@ void loop() {
       }
     }
     
-    // Check Encoder rotation for volume
-    long newPosition = encoder.getCount() / 2; // Divide by 2 for detent feel
+    long newPosition = encoder.getCount() / 2;
     if (newPosition != oldPosition) {
-      if(bleKeyboard.isConnected()) {
-        if(newPosition > oldPosition) {
-          bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
-        } else {
-          bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
-        }
-      }
+      handleEncoderAction(newPosition > oldPosition);
       oldPosition = newPosition;
     }
     
-    // Check Encoder Button
     if (encoderBtn.pressed()) {
       unsigned long pressedTime = millis();
       bool longPress = false;
       while(!encoderBtn.released() && millis() - pressedTime < 1000) {
         encoderBtn.update();
-        delay(10); // Simple delay for polling in while loop
+        delay(10);
       }
       
       if (millis() - pressedTime >= 1000) {
@@ -213,13 +265,13 @@ void loop() {
       
       if (longPress) {
         currentState = STATE_MENU;
-        encoder.setCount(brightness); // Reuse encoder counter for brightness
+        encoder.setCount(brightness);
         oldPosition = brightness;
       } else {
         if(bleKeyboard.isConnected()) {
           bleKeyboard.write(KEY_MEDIA_MUTE);
         }
-        lastActionKeyIndex = -1; // -1 means mute
+        lastActionKeyIndex = -1;
         currentState = STATE_ACTION;
         actionStartTime = millis();
       }
@@ -232,21 +284,17 @@ void loop() {
     }
     
   } else if (currentState == STATE_MENU) {
-    // Menu Logic
     long newPosition = encoder.getCount();
     if (newPosition != oldPosition) {
       brightness = constrain(newPosition, 0, 255);
       encoder.setCount(brightness);
       oldPosition = brightness;
-      
-      // Update OLED contrast dynamically
       display.ssd1306_command(SSD1306_SETCONTRAST);
       display.ssd1306_command(brightness);
     }
     
-    // Check Encoder Button to exit menu
     if (encoderBtn.pressed()) {
-      // Reset encoder position logic back to 0 so volume up/down doesn't jump
+      saveConfig();
       encoder.setCount(0);
       oldPosition = 0;
       currentState = STATE_IDLE;

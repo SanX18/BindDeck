@@ -2,3 +2,5 @@ psutil
 pyserial
 GPUtil
 requests
+flask
+keyboard

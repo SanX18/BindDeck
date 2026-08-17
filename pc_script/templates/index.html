@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Macro Deck Control</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Control Deck</h1>
+            <p>Programmable Macro Controller</p>
+        </header>
+
+        <div class="dashboard">
+            <div class="device-preview">
+                <h2>Dispositivo: Conectado</h2>
+                <div class="keyboard-grid">
+                    <!-- 2 Rows of 4 Keys -->
+                    <button class="macro-key" data-key="13">Switch 1</button>
+                    <button class="macro-key" data-key="14">Switch 2</button>
+                    <button class="macro-key" data-key="15">Switch 3</button>
+                    <button class="macro-key" data-key="16">Switch 4</button>
+                    <button class="macro-key" data-key="17">Switch 5</button>
+                    <button class="macro-key" data-key="18">Switch 6</button>
+                    <button class="macro-key" data-key="19">Switch 7</button>
+                    <button class="macro-key" data-key="20">Switch 8</button>
+                </div>
+                
+                <div class="esp-settings">
+                    <div class="setting-group">
+                        <label>Animación OLED:</label>
+                        <select id="animMode">
+                            <option value="0">Ondas Expansivas (Clásico)</option>
+                            <option value="1">Notificación Flash</option>
+                            <option value="2">Texto Minimalista Rápido</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>Acción del Encoder:</label>
+                        <select id="encMode">
+                            <option value="0">Volumen del Sistema</option>
+                            <option value="1">Scroll Vertical (Flechas Arriba/Abajo)</option>
+                            <option value="2">Scroll Horizontal (Flechas Izq/Der)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-panel" id="config-panel" style="display: none;">
+                <h3 id="panel-title">Configurar Tecla</h3>
+                
+                <div class="form-group">
+                    <label>Tipo de Acción</label>
+                    <select id="actionType">
+                        <option value="none">Sin Acción (Tecla F nativa)</option>
+                        <option value="app">Abrir Programa / Juego</option>
+                        <option value="shortcut">Atajo de Teclado</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="value-group">
+                    <label>Valor de la Acción</label>
+                    <input type="text" id="actionValue" placeholder="ej: notepad.exe o ctrl+shift+m">
+                    <small id="value-hint">Ruta al .exe del juego, o teclas separadas por +. Por ejemplo: "ctrl+shift+a" o "C:\Riot Games\League of Legends\LeagueClient.exe"</small>
+                </div>
+
+                <button class="btn-save" id="btn-save">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
