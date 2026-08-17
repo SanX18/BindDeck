@@ -1,0 +1,4 @@
+psutil
+pyserial
+GPUtil
+requests
