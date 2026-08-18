@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MacroDeck Blueprint</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        
+        <!-- DEVICE MOCKUP -->
+        <div class="device-board">
+            
+            <div class="device-header">
+                <!-- OLED -->
+                <div class="oled-screen">
+                    <span style="font-size: 0.8rem; margin-bottom:5px;">OLED DISPLAY</span>
+                    <select id="animMode">
+                        <option value="0">ANIM: WAVES</option>
+                        <option value="1">ANIM: FLASH</option>
+                        <option value="2">ANIM: TEXT</option>
+                    </select>
+                </div>
+
+                <!-- ROTARY ENCODER -->
+                <div class="encoder-wrapper">
+                    <div class="encoder"></div>
+                    <select id="encMode">
+                        <option value="0">MODE: VOL</option>
+                        <option value="1">MODE: V-SCR</option>
+                        <option value="2">MODE: H-SCR</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- KEY GRID (2x4) -->
+            <div class="keyboard-grid">
+                <button class="macro-key no-action" data-key="13">SW1</button>
+                <button class="macro-key no-action" data-key="14">SW2</button>
+                <button class="macro-key no-action" data-key="15">SW3</button>
+                <button class="macro-key no-action" data-key="16">SW4</button>
+                
+                <button class="macro-key no-action" data-key="17">SW5</button>
+                <button class="macro-key no-action" data-key="18">SW6</button>
+                <button class="macro-key no-action" data-key="19">SW7</button>
+                <button class="macro-key no-action" data-key="20">SW8</button>
+            </div>
+
+        </div>
+
+        <!-- CONFIGURATION PANEL -->
+        <div class="config-panel" id="config-panel" style="display: none;">
+            <h3 id="panel-title">SELECT SWITCH</h3>
+            
+            <div class="form-group">
+                <label>ACTION TYPE</label>
+                <select id="actionType" class="config-input">
+                    <option value="none">NATIVE (PASSTHROUGH)</option>
+                    <option value="app">EXECUTE / OPEN</option>
+                    <option value="shortcut">KEYBOARD MACRO</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="value-group">
+                <label>TARGET / VALUE</label>
+                <input type="text" id="actionValue" class="config-input" placeholder="e.g. calc.exe / ctrl+c">
+                <small id="value-hint">Path to executable or shortcut key combination.</small>
+            </div>
+
+            <button class="btn-save" id="btn-save">COMPILE & SAVE</button>
+        </div>
+
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>

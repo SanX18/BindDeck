@@ -4,3 +4,5 @@ GPUtil
 requests
 flask
 keyboard
+pywebview
+pyinstaller

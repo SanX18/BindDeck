@@ -6,6 +6,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Bounce2.h>
 #include <Preferences.h>
+#include "RoboEyes.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -13,7 +14,8 @@
 #define SCREEN_ADDRESS 0x3C
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-BleKeyboard bleKeyboard("Macro Deck", "Custom", 100);
+RoboEyes<Adafruit_SSD1306> eyes(display);
+BleKeyboard bleKeyboard("MacroDeck", "Custom", 100);
 ESP32Encoder encoder;
 Preferences preferences;
 
@@ -24,13 +26,11 @@ const int SWITCH_PINS[8] = {13, 12, 14, 27, 26, 25, 33, 32};
 const uint8_t MACRO_KEYS[8] = {KEY_F13, KEY_F14, KEY_F15, KEY_F16, KEY_F17, KEY_F18, KEY_F19, KEY_F20};
 Bounce2::Button switches[8];
 
-const int ENCODER_BTN_PIN = 23;
-Bounce2::Button encoderBtn;
-
 enum State {
   STATE_IDLE,
   STATE_ACTION,
-  STATE_MENU
+  STATE_MENU,
+  STATE_EYES
 };
 State currentState = STATE_IDLE;
 
@@ -39,27 +39,51 @@ int cpu_temp = 0, cpu_usage = 0, gpu_temp = 0, gpu_usage = 0;
 
 // Action Data
 unsigned long actionStartTime = 0;
+unsigned long lastEyeTime = 0;
+unsigned long eyeStateStartTime = 0;
 const unsigned long ACTION_DURATION = 800;
-int lastActionKeyIndex = -1; // -1: mute
+int lastActionKeyIndex = -1; // -1: mute, -2: preview, -3: volume
+int visualVolume = 50;
 
 // Config Data
 int brightness = 255;
 int animMode = 0; // 0: Circles, 1: Flash, 2: Minimal
 int encMode = 0;  // 0: Volume, 1: Vertical Arrows, 2: Horizontal Arrows
+int keyAnims[8] = {-1, -1, -1, -1, -1, -1, -1, -1}; // -1 means use global animMode
+String keyTexts[8] = {"", "", "", "", "", "", "", ""};
+int previewAnimOverride = -1;
 
 void saveConfig() {
   preferences.begin("macrodeck", false);
   preferences.putInt("animMode", animMode);
   preferences.putInt("encMode", encMode);
   preferences.putInt("brightness", brightness);
+  preferences.putBytes("keyAnims", keyAnims, sizeof(keyAnims));
   preferences.end();
 }
+
+// Forward declarations
+void drawIdle();
+void drawAction();
+void drawMenu();
+void drawUpdateScreen();
+void drawMicIcon(int x, int y, uint16_t color, uint16_t bg);
+void handleEncoderAction(bool forward);
 
 void loadConfig() {
   preferences.begin("macrodeck", true);
   animMode = preferences.getInt("animMode", 0);
   encMode = preferences.getInt("encMode", 0);
   brightness = preferences.getInt("brightness", 255);
+  for(int i=0; i<8; i++) {
+    char key[10];
+    sprintf(key, "kbanim%d", i);
+    keyAnims[i] = preferences.getInt(key, -1);
+    
+    char keyTxt[10];
+    sprintf(keyTxt, "kbtxt%d", i);
+    keyTexts[i] = preferences.getString(keyTxt, "");
+  }
   preferences.end();
 }
 
@@ -69,24 +93,52 @@ void parseSerialData() {
     data.trim();
     
     // Config commands from PC App (e.g. CFG:ANIM:1)
-    if (data.startsWith("CFG:")) {
-      if (data.startsWith("CFG:ANIM:")) {
-        animMode = data.substring(9).toInt();
-        saveConfig();
-      } else if (data.startsWith("CFG:ENC:")) {
-        encMode = data.substring(8).toInt();
-        saveConfig();
-      } else if (data.startsWith("CFG:BRT:")) {
-        brightness = data.substring(8).toInt();
-        display.ssd1306_command(SSD1306_SETCONTRAST);
-        display.ssd1306_command(brightness);
-        saveConfig();
+    if (data.startsWith("CFG:ANIM:")) {
+      animMode = data.substring(9).toInt();
+      saveConfig();
+    } else if (data.startsWith("CFG:ENC:")) {
+      encMode = data.substring(8).toInt();
+      saveConfig();
+    } else if (data.startsWith("CFG:BRT:")) {
+      brightness = data.substring(8).toInt();
+      display.ssd1306_command(SSD1306_SETCONTRAST);
+      display.ssd1306_command(brightness);
+      saveConfig();
+    } else if (data.startsWith("CFG:KB_ANIM:")) {
+      String payload = data.substring(12);
+      for(int i=0; i<8; i++) {
+        int comma = payload.indexOf(',');
+        if (comma != -1) {
+          keyAnims[i] = payload.substring(0, comma).toInt();
+          payload = payload.substring(comma+1);
+        } else {
+          keyAnims[i] = payload.toInt();
+        }
       }
-      return;
-    }
-    
-    // Telemetry: C:45,U:10,G:60,V:50
-    if (data.indexOf("C:") != -1 && data.indexOf("G:") != -1) {
+      saveConfig();
+    } else if (data.startsWith("CFG:TXT:")) {
+      int idx = data.substring(8, 9).toInt();
+      String txt = data.substring(10);
+      if (idx >= 0 && idx < 8) {
+        keyTexts[idx] = txt;
+        char pk[10];
+        sprintf(pk, "kbtxt%d", idx);
+        preferences.begin("macrodeck", false);
+        preferences.putString(pk, txt);
+        preferences.end();
+      }
+    } else if (data.startsWith("CMD:PREVIEW:")) {
+      previewAnimOverride = data.substring(12).toInt();
+      lastActionKeyIndex = -2;
+      currentState = STATE_ACTION;
+      actionStartTime = millis();
+    } else if (data.startsWith("CMD:UPDATE")) {
+      drawUpdateScreen();
+    } else if (data.startsWith("CMD:SIMULATE:")) {
+      lastActionKeyIndex = data.substring(13).toInt();
+      currentState = STATE_ACTION;
+      actionStartTime = millis();
+    } else if (data.indexOf("C:") != -1 && data.indexOf("G:") != -1) {
       sscanf(data.c_str(), "C:%d,U:%d,G:%d,V:%d", &cpu_temp, &cpu_usage, &gpu_temp, &gpu_usage);
     }
   }
@@ -113,57 +165,157 @@ void drawIdle() {
   display.display();
 }
 
+void drawUpdateScreen() {
+  display.clearDisplay();
+  
+  // Dibujar ojos estáticos de concentración
+  display.fillRoundRect(20, 10, 30, 25, 5, SSD1306_WHITE);
+  display.fillRoundRect(78, 10, 30, 25, 5, SSD1306_WHITE);
+  // Pupilas
+  display.fillCircle(35, 22, 6, SSD1306_BLACK);
+  display.fillCircle(93, 22, 6, SSD1306_BLACK);
+  
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(5, 45);
+  display.println("ACTUALIZANDO...");
+  display.setCursor(5, 55);
+  display.println("NO DESCONECTAR!");
+  
+  display.display();
+  
+  // Bucle infinito, esperando el reinicio de esptool
+  while(true) {
+    delay(100);
+  }
+}
+
+void drawMicIcon(int x, int y, uint16_t color, uint16_t bg) {
+  int bw = 8;
+  int bh = 14;
+  
+  // Clear a box behind the mic
+  display.fillRoundRect(x - bw/2 - 6, y - bh/2 - 4, bw + 12, bh + 14, 2, bg);
+
+  // Cup (drawn first)
+  display.drawRoundRect(x - bw/2 - 4, y - bh/2 + 2, bw + 8, bh, 4, color);
+  // Erase top half of cup
+  display.fillRect(x - bw/2 - 5, y - bh/2 - 2, bw + 10, bh/2 + 4, bg); 
+
+  // Mic body (drawn over the cup erase area)
+  display.fillRoundRect(x - bw/2, y - bh/2, bw, bh, 3, color);
+  
+  // Stand
+  display.drawLine(x, y + bh/2 + 2, x, y + bh/2 + 6, color);
+  display.drawLine(x - 5, y + bh/2 + 6, x + 5, y + bh/2 + 6, color);
+  
+  // Diagonal slash
+  display.drawLine(x - 12, y - 10, x + 12, y + 14, color);
+  display.drawLine(x - 12, y - 9, x + 11, y + 14, color);
+}
+
 void drawAction() {
   display.clearDisplay();
   unsigned long elapsed = millis() - actionStartTime;
   
-  if (animMode == 0) {
-    // Mode 0: Expanding Circles
+  if (lastActionKeyIndex == -3) {
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(46, 15);
+    display.print("VOLUME");
+
+    display.drawRect(14, 35, 100, 10, SSD1306_WHITE);
+    display.fillRect(14, 35, visualVolume, 10, SSD1306_WHITE);
+
+    display.display();
+    if (elapsed > 1000) {
+      currentState = STATE_IDLE;
+      lastEyeTime = millis();
+    }
+    return;
+  }
+  
+  int currentAnim = animMode;
+  if (lastActionKeyIndex == -2) {
+    currentAnim = previewAnimOverride;
+  } else if (lastActionKeyIndex >= 0 && lastActionKeyIndex < 8) {
+    if (keyAnims[lastActionKeyIndex] != -1) {
+      currentAnim = keyAnims[lastActionKeyIndex];
+    }
+  }
+  
+  String dispText = "";
+  if (lastActionKeyIndex == -2) dispText = "PREVIEW";
+  else if (lastActionKeyIndex >= 0 && lastActionKeyIndex < 8) {
+    if (keyTexts[lastActionKeyIndex].length() > 0) dispText = keyTexts[lastActionKeyIndex];
+    else {
+      dispText = "F";
+      dispText += (13 + lastActionKeyIndex);
+      dispText += " HIT";
+    }
+  }
+
+  auto printCentered = [](String text, int y, uint16_t c) {
+    int sz = (text.length() > 10) ? 1 : 2;
+    display.setTextSize(sz);
+    display.setTextColor(c);
+    int cw = sz * 6;
+    int tw = text.length() * cw;
+    int tx = (SCREEN_WIDTH - tw) / 2;
+    if (tx < 0) tx = 0;
+    int ty = y + (16 - (sz * 8)) / 2;
+    display.setCursor(tx, ty);
+    display.print(text);
+  };
+  
+  if (currentAnim == 0) {
     int maxRadius = 40;
     int radius = (elapsed * maxRadius) / ACTION_DURATION;
     display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius, SSD1306_WHITE);
     if (radius > 5) display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius - 5, SSD1306_WHITE);
     
-    display.setTextSize(2);
-    display.setTextColor(SSD1306_WHITE);
     if (lastActionKeyIndex == -1) {
-      display.setCursor(20, 25); display.print("  MUTE  ");
+      drawMicIcon(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SSD1306_WHITE, SSD1306_BLACK);
     } else {
-      display.setCursor(15, 25); display.print(" KEY F"); display.print(13 + lastActionKeyIndex);
+      printCentered(dispText, 25, SSD1306_WHITE);
     }
     
-  } else if (animMode == 1) {
-    // Mode 1: Flashing Box
-    if ((elapsed / 100) % 2 == 0) {
+  } else if (currentAnim == 1) {
+    uint16_t color = ((elapsed / 100) % 2 == 0) ? SSD1306_BLACK : SSD1306_WHITE;
+    uint16_t bg = ((elapsed / 100) % 2 == 0) ? SSD1306_WHITE : SSD1306_BLACK;
+    
+    if (bg == SSD1306_WHITE) {
       display.fillRect(10, 15, 108, 34, SSD1306_WHITE);
-      display.setTextColor(SSD1306_BLACK);
     } else {
       display.drawRect(10, 15, 108, 34, SSD1306_WHITE);
-      display.setTextColor(SSD1306_WHITE);
-    }
-    display.setTextSize(2);
-    if (lastActionKeyIndex == -1) {
-      display.setCursor(25, 25); display.print(" MUTE ");
-    } else {
-      display.setCursor(20, 25); display.print("KEY F"); display.print(13 + lastActionKeyIndex);
     }
     
-  } else if (animMode == 2) {
-    // Mode 2: Minimalist, just fast text (ends faster)
-    display.setTextSize(2);
-    display.setTextColor(SSD1306_WHITE);
     if (lastActionKeyIndex == -1) {
-      display.setCursor(40, 25); display.print("MUTE");
+      drawMicIcon(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, color, bg);
     } else {
-      display.setCursor(25, 25); display.print("F"); display.print(13 + lastActionKeyIndex); display.print(" HIT");
+      printCentered(dispText, 25, color);
     }
+    
+  } else if (currentAnim == 2) {
+    if (lastActionKeyIndex == -1) {
+      drawMicIcon(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SSD1306_WHITE, SSD1306_BLACK);
+    } else {
+      printCentered(dispText, 25, SSD1306_WHITE);
+    }
+  } else if (currentAnim == 3) {
+    int maxRadius = 40;
+    int radius = (elapsed * maxRadius) / ACTION_DURATION;
+    display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius, SSD1306_WHITE);
+    if (radius > 5) display.drawCircle(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, radius - 5, SSD1306_WHITE);
+    drawMicIcon(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, SSD1306_WHITE, SSD1306_BLACK);
   }
 
   display.display();
   
-  unsigned long duration = (animMode == 2) ? 400 : ACTION_DURATION;
+  unsigned long duration = (currentAnim == 2) ? 800 : ACTION_DURATION;
   if (elapsed > duration) {
     currentState = STATE_IDLE;
+    lastEyeTime = millis();
   }
 }
 
@@ -208,15 +360,15 @@ void setup() {
   display.clearDisplay();
   display.display();
   
+  eyes.begin(SCREEN_WIDTH, SCREEN_HEIGHT, 30);
+  eyes.setAutoblinker(true, 2, 2);
+  eyes.setIdleMode(true, 1, 2);
+  
   bleKeyboard.begin();
   
   ESP32Encoder::useInternalWeakPullResistors = UP;
   encoder.attachHalfQuad(18, 19);
   encoder.setCount(0);
-  
-  encoderBtn.attach(ENCODER_BTN_PIN, INPUT_PULLUP);
-  encoderBtn.interval(25);
-  encoderBtn.setPressedState(LOW);
   
   for(int i = 0; i < 8; i++) {
     switches[i].attach(SWITCH_PINS[i], INPUT_PULLUP);
@@ -226,10 +378,9 @@ void setup() {
 }
 
 void loop() {
-  encoderBtn.update();
   for(int i = 0; i < 8; i++) switches[i].update();
   
-  if (currentState == STATE_IDLE || currentState == STATE_ACTION) {
+  if (currentState == STATE_IDLE || currentState == STATE_ACTION || currentState == STATE_EYES) {
     parseSerialData();
     
     for(int i = 0; i < 8; i++) {
@@ -247,59 +398,36 @@ void loop() {
     
     long newPosition = encoder.getCount() / 2;
     if (newPosition != oldPosition) {
-      handleEncoderAction(newPosition > oldPosition);
-      oldPosition = newPosition;
-    }
-    
-    if (encoderBtn.pressed()) {
-      unsigned long pressedTime = millis();
-      bool longPress = false;
-      while(!encoderBtn.released() && millis() - pressedTime < 1000) {
-        encoderBtn.update();
-        delay(10);
-      }
+      bool forward = newPosition > oldPosition;
+      handleEncoderAction(forward);
       
-      if (millis() - pressedTime >= 1000) {
-        longPress = true;
-      }
-      
-      if (longPress) {
-        currentState = STATE_MENU;
-        encoder.setCount(brightness);
-        oldPosition = brightness;
-      } else {
-        if(bleKeyboard.isConnected()) {
-          bleKeyboard.write(KEY_MEDIA_MUTE);
-        }
-        lastActionKeyIndex = -1;
+      if (encMode == 0) {
+        visualVolume += forward ? 5 : -5;
+        visualVolume = constrain(visualVolume, 0, 100);
+        lastActionKeyIndex = -3;
         currentState = STATE_ACTION;
         actionStartTime = millis();
       }
+      
+      oldPosition = newPosition;
     }
     
     if (currentState == STATE_IDLE) {
-      drawIdle();
+      if (millis() - lastEyeTime > 20000) {
+        currentState = STATE_EYES;
+        eyeStateStartTime = millis();
+        eyes.setMood(random(0, 4));
+      } else {
+        drawIdle();
+      }
     } else if (currentState == STATE_ACTION) {
       drawAction();
+    } else if (currentState == STATE_EYES) {
+      eyes.update();
+      if (millis() - eyeStateStartTime > 5000) {
+        currentState = STATE_IDLE;
+        lastEyeTime = millis();
+      }
     }
-    
-  } else if (currentState == STATE_MENU) {
-    long newPosition = encoder.getCount();
-    if (newPosition != oldPosition) {
-      brightness = constrain(newPosition, 0, 255);
-      encoder.setCount(brightness);
-      oldPosition = brightness;
-      display.ssd1306_command(SSD1306_SETCONTRAST);
-      display.ssd1306_command(brightness);
-    }
-    
-    if (encoderBtn.pressed()) {
-      saveConfig();
-      encoder.setCount(0);
-      oldPosition = 0;
-      currentState = STATE_IDLE;
-    }
-    
-    drawMenu();
   }
 }

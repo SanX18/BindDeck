@@ -1,0 +1,221 @@
+:root {
+    --bg-color: #001f3f;
+    --grid-line: rgba(57, 204, 204, 0.15);
+    --blueprint-cyan: #39cccc;
+    --blueprint-cyan-glow: 0 0 8px rgba(57, 204, 204, 0.5);
+    --blueprint-cyan-hover: #7fdbff;
+    --panel-bg: rgba(0, 20, 40, 0.9);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-color);
+    background-image: 
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: var(--blueprint-cyan);
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.container {
+    display: flex;
+    gap: 2rem;
+    width: 100%;
+    max-width: 1100px;
+}
+
+/* THE DEVICE MOCKUP */
+.device-board {
+    flex: 1;
+    background: var(--panel-bg);
+    border: 2px solid var(--blueprint-cyan);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--blueprint-cyan-glow);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    position: relative;
+}
+
+/* Device Header (OLED + Encoder) */
+.device-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.oled-screen {
+    width: 200px;
+    height: 100px;
+    border: 2px solid var(--blueprint-cyan);
+    border-radius: 8px;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 0 10px rgba(57, 204, 204, 0.2);
+}
+
+.oled-screen select {
+    background: transparent;
+    color: var(--blueprint-cyan);
+    border: 1px dashed var(--blueprint-cyan);
+    padding: 0.2rem;
+    margin-top: 10px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    width: 90%;
+}
+
+.oled-screen select:focus { outline: none; border-style: solid; }
+
+.encoder {
+    width: 80px;
+    height: 80px;
+    border: 3px solid var(--blueprint-cyan);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+.encoder::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: var(--blueprint-cyan);
+    border-radius: 50%;
+    position: absolute;
+    top: 10px;
+}
+
+.encoder-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.encoder-wrapper select {
+    background: transparent;
+    color: var(--blueprint-cyan);
+    border: 1px dashed var(--blueprint-cyan);
+    padding: 0.2rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+}
+
+/* Key Grid */
+.keyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+.macro-key {
+    background: rgba(0, 31, 63, 0.5);
+    border: 2px solid var(--blueprint-cyan);
+    color: var(--blueprint-cyan);
+    padding: 2.5rem 0;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    text-align: center;
+    font-family: inherit;
+}
+
+.macro-key:hover {
+    background: rgba(57, 204, 204, 0.2);
+    box-shadow: var(--blueprint-cyan-glow);
+}
+
+.macro-key.active {
+    background: var(--blueprint-cyan);
+    color: var(--bg-color);
+    transform: scale(0.95);
+    box-shadow: none;
+}
+
+.macro-key.has-action {
+    border-style: solid;
+    background: rgba(57, 204, 204, 0.1);
+}
+.macro-key.no-action {
+    border-style: dashed;
+}
+
+/* CONFIG PANEL */
+.config-panel {
+    width: 350px;
+    background: var(--panel-bg);
+    border: 2px solid var(--blueprint-cyan);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--blueprint-cyan-glow);
+}
+
+.config-panel h3 {
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--blueprint-cyan);
+    padding-bottom: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+.form-group label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+select.config-input, input.config-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--blueprint-cyan);
+    color: var(--blueprint-cyan);
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+}
+select.config-input:focus, input.config-input:focus {
+    box-shadow: var(--blueprint-cyan-glow);
+}
+
+small { opacity: 0.7; margin-top: 0.5rem; font-size: 0.75rem; }
+
+.btn-save {
+    background: transparent;
+    color: var(--blueprint-cyan);
+    border: 2px solid var(--blueprint-cyan);
+    padding: 1rem;
+    width: 100%;
+    border-radius: 6px;
+    font-weight: bold;
+    font-family: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+.btn-save:hover { 
+    background: var(--blueprint-cyan); 
+    color: var(--bg-color);
+    box-shadow: var(--blueprint-cyan-glow);
+}
