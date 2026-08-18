@@ -146,22 +146,37 @@ void parseSerialData() {
 
 void drawIdle() {
   display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  
-  display.setCursor(0, 0);
-  display.println("--- SYSTEM STATS ---");
-  
-  display.setCursor(0, 15);
-  display.print("CPU Temp: "); display.print(cpu_temp); display.println(" C");
-  display.setCursor(0, 25);
-  display.print("CPU Load: "); display.print(cpu_usage); display.println(" %");
 
-  display.setCursor(0, 40);
-  display.print("GPU Temp: "); display.print(gpu_temp); display.println(" C");
-  display.setCursor(0, 50);
-  display.print("GPU Load: "); display.print(gpu_usage); display.println(" %");
-  
+  if (cpu_temp > 85 || gpu_temp > 85) {
+    if ((millis() / 500) % 2 == 0) { // Parpadeo cada 500ms
+      display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
+      display.setTextColor(SSD1306_BLACK);
+      display.setTextSize(2);
+      display.setCursor(20, 15);
+      display.println("ALERTA!");
+      display.setTextSize(1);
+      display.setCursor(15, 40);
+      if (cpu_temp > 85) display.print("CPU TEMP ALTA: "); else display.print("GPU TEMP ALTA: ");
+      display.println(cpu_temp > 85 ? cpu_temp : gpu_temp);
+    }
+  } else {
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    
+    display.setCursor(0, 0);
+    display.println("--- SYSTEM STATS ---");
+    
+    display.setCursor(0, 15);
+    display.print("CPU Temp: "); display.print(cpu_temp); display.println(" C");
+    display.setCursor(0, 25);
+    display.print("CPU Load: "); display.print(cpu_usage); display.println(" %");
+
+    display.setCursor(0, 40);
+    display.print("GPU Temp: "); display.print(gpu_temp); display.println(" C");
+    display.setCursor(0, 50);
+    display.print("GPU Load: "); display.print(gpu_usage); display.println(" %");
+  }
+
   display.display();
 }
 
@@ -221,11 +236,21 @@ void drawAction() {
   if (lastActionKeyIndex == -3) {
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(46, 15);
-    display.print("VOLUME");
-
-    display.drawRect(14, 35, 100, 10, SSD1306_WHITE);
-    display.fillRect(14, 35, visualVolume, 10, SSD1306_WHITE);
+    if (encMode == 0) {
+      display.setCursor(46, 15);
+      display.print("VOLUME");
+      display.drawRect(14, 35, 100, 10, SSD1306_WHITE);
+      display.fillRect(14, 35, visualVolume, 10, SSD1306_WHITE);
+    } else if (encMode == 1) {
+      display.setCursor(52, 28);
+      display.print("ZOOM");
+    } else if (encMode == 2) {
+      display.setCursor(52, 28);
+      display.print("TABS");
+    } else if (encMode == 3) {
+      display.setCursor(38, 28);
+      display.print("UNDO/REDO");
+    }
 
     display.display();
     if (elapsed > 1000) {
@@ -339,10 +364,19 @@ void handleEncoderAction(bool forward) {
   
   if (encMode == 0) { // Volume
     bleKeyboard.write(forward ? KEY_MEDIA_VOLUME_UP : KEY_MEDIA_VOLUME_DOWN);
-  } else if (encMode == 1) { // Up/Down Arrows
-    bleKeyboard.write(forward ? KEY_DOWN_ARROW : KEY_UP_ARROW);
-  } else if (encMode == 2) { // Left/Right Arrows
-    bleKeyboard.write(forward ? KEY_RIGHT_ARROW : KEY_LEFT_ARROW);
+  } else if (encMode == 1) { // Zoom (Ctrl + / Ctrl -)
+    bleKeyboard.press(KEY_LEFT_CTRL);
+    bleKeyboard.write(forward ? '+' : '-');
+    bleKeyboard.releaseAll();
+  } else if (encMode == 2) { // Browser Tabs
+    bleKeyboard.press(KEY_LEFT_CTRL);
+    if (!forward) bleKeyboard.press(KEY_LEFT_SHIFT);
+    bleKeyboard.write(KEY_TAB);
+    bleKeyboard.releaseAll();
+  } else if (encMode == 3) { // Undo / Redo
+    bleKeyboard.press(KEY_LEFT_CTRL);
+    bleKeyboard.write(forward ? 'y' : 'z');
+    bleKeyboard.releaseAll();
   }
 }
 
@@ -404,10 +438,11 @@ void loop() {
       if (encMode == 0) {
         visualVolume += forward ? 5 : -5;
         visualVolume = constrain(visualVolume, 0, 100);
-        lastActionKeyIndex = -3;
-        currentState = STATE_ACTION;
-        actionStartTime = millis();
       }
+      
+      lastActionKeyIndex = -3;
+      currentState = STATE_ACTION;
+      actionStartTime = millis();
       
       oldPosition = newPosition;
     }

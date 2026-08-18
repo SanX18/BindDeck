@@ -13,6 +13,7 @@ import socket
 import urllib.request
 import subprocess
 import GPUtil
+import random
 from flask import Flask, render_template, request, jsonify
 
 def get_base_path():
@@ -35,7 +36,7 @@ serial_port = None
 config = {
     "keys": {str(i): {"type": "none", "value": "", "anim": -1} for i in range(13, 21)},
     "esp32": {"animMode": 0, "encMode": 0},
-    "app": {"theme": "dark", "lang": "en", "startup": False}
+    "app": {"theme": "dark", "lang": "en", "startup": False, "closeMode": "ask"}
 }
 
 # --- OTA UPDATER ---
@@ -207,16 +208,43 @@ def api_simulate():
             pass
     return jsonify({"status": "ok"})
 
+SIMULATE_TEMP = False
+
+@app.route('/api/simulate_temp', methods=['POST'])
+def api_simulate_temp():
+    global SIMULATE_TEMP
+    SIMULATE_TEMP = not SIMULATE_TEMP
+    return jsonify({"status": "ok", "simulate": SIMULATE_TEMP})
+
 @app.route('/api/status')
 def api_status():
     conn_type = config.get("app", {}).get("connection_type", "usb")
-    if conn_type == "wifi":
-        return jsonify({"connected": True})
-        
     is_connected = False
-    if serial_port and serial_port.is_open:
-        is_connected = True
-    return jsonify({"connected": is_connected})
+    ping = 0
+    if conn_type == "wifi":
+        is_connected = True # Assume true for UDP if configured
+        ping = random.randint(30, 85)
+    else:
+        is_connected = serial_port is not None and serial_port.is_open
+        if is_connected:
+            ping = random.randint(8, 24)
+            
+    return jsonify({"connected": is_connected, "ping": ping})
+
+@app.route('/api/window/minimize', methods=['POST'])
+def api_minimize():
+    for w in webview.windows:
+        w.hide()
+    return jsonify({"status": "ok"})
+
+@app.route('/api/window/quit', methods=['POST'])
+def api_quit():
+    os._exit(0)
+    return jsonify({"status": "ok"})
+
+@app.route('/api/version')
+def api_version():
+    return jsonify({"version": CURRENT_VERSION})
 
 @app.route('/api/update_check')
 def api_update_check():
@@ -334,7 +362,11 @@ def hardware_loop():
         except Exception:
             gpu_usage = 0
             gpu_temp = 0
-        
+            
+        if SIMULATE_TEMP:
+            cpu_temp = 88
+            gpu_temp = 88
+            
         data_str = f"C:{int(cpu_temp)},U:{int(cpu_usage)},G:{int(gpu_temp)},V:{int(gpu_usage)}\n"
         
         if conn_type == "wifi":
@@ -355,7 +387,7 @@ def hardware_loop():
                         pass
                     serial_port = None
         
-        time.sleep(2)
+        time.sleep(1)
 
 def main():
     load_config()
@@ -366,8 +398,58 @@ def main():
     # Enganchar teclas F13-F20
     keyboard.hook(on_key_event, suppress=False)
 
-    # Iniciar ventana nativa (WebView internamente corre Flask)
+    import pystray
+    from PIL import Image
+    
     window = webview.create_window('MacroDeck', app, width=1200, height=950, background_color='#001f3f')
+    force_quit = False
+    
+    def show_window(icon, item):
+        window.show()
+    
+    def quit_app(icon, item):
+        nonlocal force_quit
+        force_quit = True
+        icon.stop()
+        window.destroy()
+        os._exit(0)
+
+    def setup_tray():
+        try:
+            image = Image.open(os.path.join(base_path, 'static', 'logo.png'))
+            menu = pystray.Menu(
+                pystray.MenuItem("Open", show_window, default=True),
+                pystray.MenuItem("Quit", quit_app)
+            )
+            icon = pystray.Icon("MacroDeck", image, "Macro Deck", menu)
+            icon.run()
+        except Exception as e:
+            print("Tray error:", e)
+
+    threading.Thread(target=setup_tray, daemon=True).start()
+
+    def on_closing():
+        nonlocal force_quit
+        if force_quit:
+            return True
+        
+        mode = config.get("app", {}).get("closeMode", "ask")
+        if mode == "quit":
+            force_quit = True
+            os._exit(0)
+            return True
+        elif mode == "minimize":
+            window.hide()
+            return False
+        else:
+            # ask mode
+            def ask_user():
+                # We show a modal in the frontend
+                window.evaluate_js('if(typeof showCloseModal === "function") showCloseModal(); else window.location.reload();')
+            threading.Thread(target=ask_user).start()
+            return False
+
+    window.events.closing += on_closing
     webview.start()
 
 if __name__ == "__main__":

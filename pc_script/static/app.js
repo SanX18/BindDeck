@@ -1,6 +1,19 @@
 let config = {};
 let currentKey = null;
 
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('testModeToggle');
+    if (toggle) {
+        toggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.body.classList.add('test-mode-active');
+            } else {
+                document.body.classList.remove('test-mode-active');
+            }
+        });
+    }
+});
+
 const i18n = {
     en: {
         app_title: "Macro Deck",
@@ -17,9 +30,11 @@ const i18n = {
         oled_brightness: "OLED Brightness",
         enc_action: "Encoder Action",
         enc_0: "System Volume",
-        enc_1: "Scroll (Vertical)",
-        enc_2: "Scroll (Horizontal)",
+        enc_1: "Zoom (In/Out)",
+        enc_2: "Browser Tabs (Prev/Next)",
+        enc_3: "Undo / Redo",
         sync: "Sync to Device",
+        sync_tooltip: "Send current configuration and colors to the device instantly.",
         control_deck: "Macro Deck",
         select_key_hint: "Select a key to configure its action.",
         action: "Action",
@@ -27,17 +42,24 @@ const i18n = {
         press: "Press",
         hold: "Hold",
         action_type: "Action type",
-        action_none: "No action (Passthrough)",
-        action_app: "Open App / Executable",
-        action_shortcut: "Keyboard Shortcut",
-        action_text: "Write Text",
+        action_none: "Native Keyboard (F13-F20)",
+        action_app: "Run Program or File",
+        action_shortcut: "Complex Keyboard Shortcut",
+        action_text: "Auto-Type Text",
         anim_on_press: "Animation on Press",
-        value: "Value",
-        value_hint: "Shortcuts use + separators (CTRL+SHIFT+S). Write Text types raw text. Actions run on PC.",
-        custom_text: "OLED Custom Text",
-        custom_text_hint: "Optional. Leave empty to display default F13-F20.",
-        save_action: "Save action",
+        value: "Action Configuration",
+        value_hint: "Apps: path or name (calc.exe). Shortcuts: use + (CTRL+SHIFT+C).",
+        custom_text: "On-Screen Custom Text",
+        custom_text_hint: "Optional. Short text to display when button is pressed.",
+        save_action: "Save",
         delete_action: "Delete",
+        hw_leds: "My build has LED's",
+        global_color: "Global Color",
+        led_effect: "LED Effect",
+        led_solid: "Solid Color",
+        led_breath: "Breathing",
+        led_rainbow: "Rainbow",
+        led_wave: "Wave on Press",
         settings_title: "App Settings",
         theme: "Theme",
         dark: "Dark",
@@ -54,7 +76,18 @@ const i18n = {
         about_tab2: "Privacy & Transparency",
         about_desc2: "<li style='margin-bottom: 0.5rem;'>This application runs completely locally on your machine.</li><li style='margin-bottom: 0.5rem;'>It DOES NOT collect, store or transmit keystrokes, passwords, telemetry or personal data to external servers.</li><li style='margin-bottom: 0.5rem;'>Communication is strictly limited to the local connection (USB/Serial/Bluetooth) between your computer and the connected ESP32 device.</li>",
         about_tab3: "Terms & Support",
-        about_desc3: "<strong>Disclaimer:</strong><br>This software is provided \"AS IS\", without express or implied warranties of uninterrupted operation or universal hardware compatibility. The developer is not liable for hardware misconfiguration or damages.<br><br><strong>Support & Donations:</strong><br>This application is completely free. If you wish to support the project's maintenance, you can voluntarily do so via the <strong>Sponsor icon at the bottom of the main page</strong>. Donations are symbolic tokens of appreciation and do not constitute a purchase agreement or guaranteed technical support."
+        about_desc3: "<strong>Disclaimer:</strong><br>This software is provided \"AS IS\", without express or implied warranties of uninterrupted operation or universal hardware compatibility. The developer is not liable for hardware misconfiguration or damages.<br><br><strong>Support & Donations:</strong><br>This application is completely free. If you wish to support the project's maintenance, you can voluntarily do so via the <strong>Sponsor icon at the bottom of the main page</strong>. Donations are symbolic tokens of appreciation and do not constitute a purchase agreement or guaranteed technical support.",
+        close_action: "When clicking X",
+        close_ask: "Ask me every time",
+        close_minimize: "Minimize to System Tray",
+        close_quit: "Quit Application",
+        close_title: "Close Macro Deck?",
+        close_desc: "Do you want to minimize the application to the system tray so your macros keep working, or quit entirely?",
+        close_remember: "Remember my choice",
+        close_minimize_btn: "Minimize to Tray",
+        close_quit_btn: "Quit Entirely",
+        close_cancel: "Cancel",
+        test_mode: "Test Mode"
     },
     es: {
         app_title: "Macro Deck",
@@ -71,9 +104,11 @@ const i18n = {
         oled_brightness: "Brillo OLED",
         enc_action: "Acción del Encoder",
         enc_0: "Volumen del Sistema",
-        enc_1: "Scroll (Vertical)",
-        enc_2: "Scroll (Horizontal)",
+        enc_1: "Hacer Zoom (+ / -)",
+        enc_2: "Pestañas Navegador (Izq/Der)",
+        enc_3: "Deshacer / Rehacer",
         sync: "Sincronizar",
+        sync_tooltip: "Envía la configuración y colores actuales al dispositivo al instante.",
         control_deck: "Macro Deck",
         select_key_hint: "Selecciona una tecla para configurarla.",
         action: "Acción",
@@ -81,17 +116,24 @@ const i18n = {
         press: "Pulsar",
         hold: "Mantener",
         action_type: "Tipo de acción",
-        action_none: "Ninguna (Nativa)",
-        action_app: "Abrir App / Ejecutable",
-        action_shortcut: "Atajo de Teclado",
-        action_text: "Escribir Texto",
+        action_none: "Teclado Nativo (F13-F20)",
+        action_app: "Ejecutar Programa o Archivo",
+        action_shortcut: "Atajo de Teclado Múltiple",
+        action_text: "Escribir Texto Automático",
         anim_on_press: "Animación al Pulsar",
-        value: "Valor",
-        value_hint: "Los atajos usan + (ej: CTRL+SHIFT+S). Escribir Texto redacta tal cual. Se ejecuta en el PC.",
-        custom_text: "Texto OLED Personalizado",
-        custom_text_hint: "Opcional. Si lo dejas vacío se mostrará F13-F20.",
-        save_action: "Guardar acción",
+        value: "Configuración de la Acción",
+        value_hint: "Programas: ruta o nombre (ej. calc.exe). Atajos: unir con + (ej. CTRL+SHIFT+C).",
+        custom_text: "Texto Personalizado en Pantalla",
+        custom_text_hint: "Opcional. Texto breve a mostrar cuando se pulsa el botón.",
+        save_action: "Guardar",
         delete_action: "Borrar",
+        hw_leds: "Mi dispositivo tiene LED's",
+        global_color: "Color Global",
+        led_effect: "Efecto LED",
+        led_solid: "Color Fijo",
+        led_breath: "Respiración",
+        led_rainbow: "Arcoíris",
+        led_wave: "Onda al Pulsar",
         settings_title: "Ajustes de la App",
         theme: "Tema",
         dark: "Oscuro",
@@ -108,7 +150,18 @@ const i18n = {
         about_tab2: "Privacidad y Transparencia",
         about_desc2: "<li style='margin-bottom: 0.5rem;'>Esta aplicación funciona de forma completamente local en tu equipo.</li><li style='margin-bottom: 0.5rem;'>NO recopila, almacena ni transmite pulsaciones de teclas, contraseñas, telemetría ni datos personales a servidores externos.</li><li style='margin-bottom: 0.5rem;'>La comunicación se limita exclusivamente a la conexión local (USB/Serial/Bluetooth) entre tu ordenador y el dispositivo ESP32 conectado.</li>",
         about_tab3: "Términos y Soporte",
-        about_desc3: "<strong>Descargo de Responsabilidad (Disclaimer):</strong><br>Este software se distribuye \"tal cual\" (AS IS), sin garantías explícitas ni implícitas de funcionamiento ininterrumpido o compatibilidad universal con todos los entornos de hardware. El desarrollador no se hace responsable de configuraciones erróneas en el hardware o pérdidas derivadas de su uso.<br><br><strong>Apoyo y Donaciones:</strong><br>El uso de esta aplicación es completamente gratuito. Si deseas apoyar el mantenimiento del proyecto, puedes hacerlo de forma voluntaria a través del <strong>icono de Sponsor que hay al pie de la ventana principal</strong>. Las donaciones son muestras simbólicas de agradecimiento y no constituyen un contrato de compra-venta ni servicio de asistencia técnica garantizada."
+        about_desc3: "<strong>Descargo de Responsabilidad (Disclaimer):</strong><br>Este software se distribuye \"tal cual\" (AS IS), sin garantías explícitas ni implícitas de funcionamiento ininterrumpido o compatibilidad universal con todos los entornos de hardware. El desarrollador no se hace responsable de configuraciones erróneas en el hardware o pérdidas derivadas de su uso.<br><br><strong>Apoyo y Donaciones:</strong><br>El uso de esta aplicación es completamente gratuito. Si deseas apoyar el mantenimiento del proyecto, puedes hacerlo de forma voluntaria a través del <strong>icono de Sponsor que hay al pie de la ventana principal</strong>. Las donaciones son muestras simbólicas de agradecimiento y no constituyen un contrato de compra-venta ni servicio de asistencia técnica garantizada.",
+        close_action: "Al pulsar la X",
+        close_ask: "Preguntarme cada vez",
+        close_minimize: "Minimizar a la Bandeja (Fondo)",
+        close_quit: "Cerrar Aplicación",
+        close_title: "¿Cerrar Macro Deck?",
+        close_desc: "¿Deseas minimizar la aplicación a la bandeja del sistema para que tus macros sigan funcionando, o cerrarla completamente?",
+        close_remember: "Recordar mi decisión",
+        close_minimize_btn: "Minimizar a la Bandeja",
+        close_quit_btn: "Cerrar Completamente",
+        close_cancel: "Cancelar",
+        test_mode: "Modo Prueba"
     }
 };
 
@@ -120,6 +173,10 @@ function applyLanguage(lang) {
             el.innerHTML = dict[key];
         }
     });
+    const syncBtn = document.getElementById('btn-sync-header');
+    if (syncBtn && dict['sync_tooltip']) {
+        syncBtn.title = dict['sync_tooltip'];
+    }
 }
 
 function updatePresets(type) {
@@ -153,12 +210,31 @@ async function fetchConfig() {
             if (config.esp32.brightness !== undefined) {
                 document.getElementById('oledBrightness').value = Math.round((config.esp32.brightness / 255) * 100);
             }
+            if (config.esp32.hwLeds !== undefined) {
+                document.getElementById('hwHasLeds').checked = config.esp32.hwLeds;
+                document.getElementById('ledColorPicker').style.display = config.esp32.hwLeds ? 'flex' : 'none';
+            }
+            if (config.esp32.ledColor) {
+                document.getElementById('globalLedColor').value = config.esp32.ledColor;
+            }
+            if (config.esp32.ledEffect !== undefined) {
+                document.getElementById('ledEffect').value = config.esp32.ledEffect;
+            }
         }
+        
+        try {
+            const verRes = await fetch('/api/version');
+            const verData = await verRes.json();
+            const ver = verData.version;
+            i18n.en.about_desc1 = i18n.en.about_desc1.replace("1.0.0", ver);
+            i18n.es.about_desc1 = i18n.es.about_desc1.replace("1.0.0", ver);
+        } catch(e) {}
         
         if (config.app) {
             document.getElementById('appTheme').value = config.app.theme || 'dark';
             document.getElementById('appLang').value = config.app.lang || 'en';
             document.getElementById('appStartup').checked = config.app.startup || false;
+            document.getElementById('closeMode').value = config.app.closeMode || 'ask';
             
             if (config.app.theme === 'light') document.body.classList.add('light-theme');
             applyLanguage(config.app.lang || 'en');
@@ -228,11 +304,15 @@ async function saveSettings(silent = false) {
     config.esp32.animMode = parseInt(document.getElementById('animMode').value);
     config.esp32.encMode = parseInt(document.getElementById('encMode').value);
     config.esp32.brightness = Math.round((parseInt(document.getElementById('oledBrightness').value) / 100) * 255);
+    config.esp32.hwLeds = document.getElementById('hwHasLeds').checked;
+    config.esp32.ledColor = document.getElementById('globalLedColor').value;
+    config.esp32.ledEffect = parseInt(document.getElementById('ledEffect').value);
 
     if (!config.app) config.app = {};
     config.app.theme = document.getElementById('appTheme').value;
     config.app.lang = document.getElementById('appLang').value;
     config.app.startup = document.getElementById('appStartup').checked;
+    config.app.closeMode = document.getElementById('closeMode').value;
 
     try {
         await fetch('/api/config', {
@@ -250,11 +330,10 @@ async function saveSettings(silent = false) {
                 saveBtn.innerText = "Saved";
                 setTimeout(() => saveBtn.innerText = originalText, 1500);
             }
-            const saveSettingsBtn = document.getElementById('btn-save-settings');
+            const saveSettingsBtn = document.getElementById('btn-sync-header');
             if (saveSettingsBtn) {
-                const originalText = saveSettingsBtn.innerText;
-                saveSettingsBtn.innerText = "Synced!";
-                setTimeout(() => saveSettingsBtn.innerText = originalText, 1500);
+                saveSettingsBtn.style.color = "#22c55e";
+                setTimeout(() => saveSettingsBtn.style.color = "var(--text-main)", 1500);
             }
         }
     } catch (e) {
@@ -290,7 +369,9 @@ document.querySelectorAll('.keycap').forEach(btn => {
         panel.style.pointerEvents = 'auto';
         
         const swNumber = e.target.innerText.split(' ')[1];
-        document.getElementById('panel-subtitle').innerText = `Configuring SW ${swNumber} (Native F${currentKey})`;
+        const lang = document.getElementById('appLang').value || 'en';
+        const prefix = (lang === 'es') ? 'Configuración Switch ' : 'Configuring Switch ';
+        document.getElementById('panel-subtitle').innerText = `${prefix}${swNumber} (F${currentKey})`;
         
         document.getElementById('actionType').value = keyConfig.type;
         updatePresets(keyConfig.type);
@@ -319,7 +400,58 @@ document.getElementById('btn-delete').addEventListener('click', () => {
     setTimeout(() => delBtn.innerText = originalText, 1000);
 });
 
-document.getElementById('btn-save-settings').addEventListener('click', () => saveSettings(false));
+document.getElementById('btn-sync-header').addEventListener('click', () => saveSettings(false));
+
+// Panel Drag and Drop
+const panels = document.querySelectorAll('.main-layout > .panel');
+panels.forEach(panel => {
+    const handle = panel.querySelector('.drag-handle');
+    if(handle) {
+        handle.addEventListener('mousedown', () => panel.setAttribute('draggable', 'true'));
+        handle.addEventListener('mouseup', () => panel.removeAttribute('draggable'));
+    }
+    
+    panel.addEventListener('dragstart', (e) => {
+        panel.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+    
+    panel.addEventListener('dragend', () => {
+        panel.classList.remove('dragging');
+        panel.removeAttribute('draggable');
+    });
+});
+
+const layout = document.querySelector('.main-layout');
+layout.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const draggingPanel = document.querySelector('.dragging');
+    if (!draggingPanel) return;
+    
+    const siblings = [...layout.querySelectorAll('.panel:not(.dragging)')];
+    const nextSibling = siblings.find(sibling => {
+        const box = sibling.getBoundingClientRect();
+        const offset = e.clientX - box.left - box.width / 2;
+        return offset < 0;
+    });
+    
+    if (nextSibling) {
+        layout.insertBefore(draggingPanel, nextSibling);
+    } else {
+        layout.appendChild(draggingPanel);
+    }
+});
+
+document.getElementById('hwHasLeds').addEventListener('change', (e) => {
+    document.getElementById('ledColorPicker').style.display = e.target.checked ? 'flex' : 'none';
+    saveSettings(true);
+});
+document.getElementById('globalLedColor').addEventListener('change', (e) => {
+    saveSettings(true);
+});
+document.getElementById('ledEffect').addEventListener('change', (e) => {
+    saveSettings(true);
+});
 
 document.getElementById('animMode').addEventListener('change', (e) => {
     saveSettings(true);
@@ -356,11 +488,56 @@ document.getElementById('btn-save-app-settings').addEventListener('click', () =>
 });
 
 // ABOUT MODAL
+const knob = document.getElementById('encoder-knob');
+let isDraggingKnob = false;
+let currentRotation = 0;
+let startY = 0;
+
+knob.addEventListener('mousedown', (e) => {
+    isDraggingKnob = true;
+    startY = e.clientY;
+    knob.style.cursor = 'grabbing';
+});
+window.addEventListener('mouseup', () => {
+    if(isDraggingKnob) {
+        isDraggingKnob = false;
+        knob.style.cursor = 'grab';
+    }
+});
+window.addEventListener('mousemove', (e) => {
+    if (!isDraggingKnob) return;
+    const diff = startY - e.clientY;
+    if (Math.abs(diff) > 5) {
+        currentRotation += diff > 0 ? 15 : -15;
+        knob.style.transform = `rotate(${currentRotation}deg)`;
+        simulateAction(-3); // Simulate giro
+        startY = e.clientY; // Reset for continuous rotation
+    }
+});
+
 document.getElementById('btn-open-about').addEventListener('click', () => {
     document.getElementById('about-modal').style.display = 'flex';
 });
 document.getElementById('btn-close-about').addEventListener('click', () => {
     document.getElementById('about-modal').style.display = 'none';
+});
+
+document.querySelectorAll('.about-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.about-tab').forEach(t => {
+            t.classList.remove('active');
+            t.style.color = 'var(--text-muted)';
+            t.style.borderBottomColor = 'transparent';
+            t.style.fontWeight = 'normal';
+        });
+        e.target.classList.add('active');
+        e.target.style.color = 'var(--primary)';
+        e.target.style.borderBottomColor = 'var(--primary)';
+        e.target.style.fontWeight = 'bold';
+        
+        document.querySelectorAll('.about-content').forEach(c => c.style.display = 'none');
+        document.getElementById('about-content-' + e.target.getAttribute('data-tab')).style.display = 'block';
+    });
 });
 
 document.getElementById('btn-check-updates').addEventListener('click', async () => {
@@ -395,16 +572,22 @@ setInterval(async () => {
         
         const dot = document.getElementById('status-dot');
         const text = document.getElementById('status-text');
+        const pingText = document.getElementById('ping-text');
         const lang = document.getElementById('appLang').value || 'en';
         
         if (data.connected) {
             dot.style.background = '#22c55e';
             dot.style.boxShadow = '0 0 8px #22c55e';
             text.innerText = i18n[lang].device_connected;
+            if (pingText) {
+                pingText.style.display = 'inline';
+                pingText.innerText = `(${data.ping}ms)`;
+            }
         } else {
             dot.style.background = '#ef4444';
             dot.style.boxShadow = '0 0 8px #ef4444';
             text.innerText = i18n[lang].device_disconnected;
+            if (pingText) pingText.style.display = 'none';
         }
     } catch(e) {}
 }, 2000);
@@ -445,3 +628,30 @@ async function startUpdate() {
         alert("Network error.");
     }
 }
+
+// CLOSE MODAL LOGIC
+window.showCloseModal = function() {
+    document.getElementById('close-modal').style.display = 'flex';
+};
+
+document.getElementById('btn-close-cancel').addEventListener('click', () => {
+    document.getElementById('close-modal').style.display = 'none';
+});
+
+document.getElementById('btn-close-minimize').addEventListener('click', async () => {
+    document.getElementById('close-modal').style.display = 'none';
+    if (document.getElementById('closeRemember').checked) {
+        document.getElementById('closeMode').value = 'minimize';
+        await saveSettings(true);
+    }
+    fetch('/api/window/minimize', { method: 'POST' });
+});
+
+document.getElementById('btn-close-quit').addEventListener('click', async () => {
+    document.getElementById('close-modal').style.display = 'none';
+    if (document.getElementById('closeRemember').checked) {
+        document.getElementById('closeMode').value = 'quit';
+        await saveSettings(true);
+    }
+    fetch('/api/window/quit', { method: 'POST' });
+});

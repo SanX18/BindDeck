@@ -385,19 +385,67 @@ body.light-theme .device-mockup {
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }
 
-/* Modal */
+/* Modal Base */
 .modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    backdrop-filter: blur(4px);
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
 }
 .modal-content {
     width: 400px;
-    max-width: 90%;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
+
+/* Toggle Switch CSS */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border);
+  transition: .2s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-main);
+  transition: .2s;
+}
+input:checked + .slider {
+  background-color: #22c55e;
+}
+input:checked + .slider:before {
+  transform: translateX(18px);
+  background-color: #000;
+}
+.slider.round {
+  border-radius: 22px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Test Mode Elements */
+.test-mode-element {
+    display: none !important;
+}
+body.test-mode-active .test-mode-element {
+    display: flex !important;
+}
+. d r a g g i n g   {   o p a c i t y :   0 . 4 ;   }  
+ 
