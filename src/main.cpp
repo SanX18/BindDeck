@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <BleKeyboard.h>
-#include <ESP32Encoder.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -16,10 +15,27 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RoboEyes<Adafruit_SSD1306> eyes(display);
 BleKeyboard bleKeyboard("MacroDeck", "Custom", 100);
-ESP32Encoder encoder;
 Preferences preferences;
 
-long oldPosition = 0;
+// Potentiometer
+const int POT_PIN      = 34;
+const int POT_SAMPLES  = 32;  // Increased for better noise immunity
+const int POT_DEADZONE = 2;   // Reduced deadzone for better sensitivity
+
+// Calibrated range — saved to flash, updated automatically
+int potRawMin = 400;   // Defaults: conservative. Updated when pot hits stops.
+int potRawMax = 3700;
+
+// Tracking vars (NOT saved — reset every boot, initialized to ADC extremes)
+// Starting at 4095/0 means ANY real reading immediately starts tracking.
+int   potTrackMin     = 4095;
+int   potTrackMax     = 0;
+unsigned long potTrackMinSince = 0;
+unsigned long potTrackMaxSince = 0;
+
+int potLastPercent = -1;
+int potSentVolume  = -1;
+unsigned long lastPotChange = 0;
 
 // Pins
 const int SWITCH_PINS[8] = {13, 12, 14, 27, 26, 25, 33, 32};
@@ -59,6 +75,8 @@ void saveConfig() {
   preferences.putInt("encMode", encMode);
   preferences.putInt("brightness", brightness);
   preferences.putBytes("keyAnims", keyAnims, sizeof(keyAnims));
+  preferences.putInt("potRawMin", potRawMin);
+  preferences.putInt("potRawMax", potRawMax);
   preferences.end();
 }
 
@@ -84,8 +102,71 @@ void loadConfig() {
     sprintf(keyTxt, "kbtxt%d", i);
     keyTexts[i] = preferences.getString(keyTxt, "");
   }
+  potRawMin = preferences.getInt("potRawMin", 400);
+  potRawMax = preferences.getInt("potRawMax", 3700);
+  // potTrackMin/Max intentionally NOT loaded — reset to extremes every boot
+  // so calibration can learn from the very first use each session
+  potTrackMin = 4095;
+  potTrackMax = 0;
   preferences.end();
 }
+
+// Returns averaged raw ADC reading from potentiometer
+int readPotRaw() {
+  long sum = 0;
+  for (int i = 0; i < POT_SAMPLES; i++) {
+    sum += analogRead(POT_PIN);
+    delayMicroseconds(200);
+  }
+  return (int)(sum / POT_SAMPLES);
+}
+
+// Returns potentiometer position as 0-100% using calibrated range
+int readPotPercent(int raw) {
+  int pct = map(raw, potRawMin, potRawMax, 0, 100);
+  return constrain(pct, 0, 100);
+}
+
+// Auto-calibration: tracks the lowest and highest stable raw values seen.
+// potTrackMin starts at 4095 so the first real reading always updates it.
+// potTrackMax starts at 0 so the first real reading always updates it.
+// Only commits to flash if the new extreme has been held for 700ms (no noise).
+void updatePotCalibration(int raw) {
+  const unsigned long STABLE_MS = 200;  // Reduced to calibrate faster
+  const int           MARGIN    = 25;   // Increased tolerance to capture ends easily
+
+  // ── Track minimum ──
+  if (raw < potTrackMin - MARGIN) {
+    // New lowest value seen: reset the timer
+    potTrackMin     = raw;
+    potTrackMinSince = millis();
+  } else if (raw <= potTrackMin + MARGIN && millis() - potTrackMinSince >= STABLE_MS) {
+    // Stable near the new low for 700ms → accept as calibrated minimum
+    if (potTrackMin < potRawMin) {
+      potRawMin = potTrackMin;
+      saveConfig();
+    }
+  }
+
+  // ── Track maximum ──
+  if (raw > potTrackMax + MARGIN) {
+    // New highest value seen: reset the timer
+    potTrackMax     = raw;
+    potTrackMaxSince = millis();
+  } else if (raw >= potTrackMax - MARGIN && millis() - potTrackMaxSince >= STABLE_MS) {
+    // Stable near the new high for 700ms → accept as calibrated maximum
+    if (potTrackMax > potRawMax) {
+      potRawMax = potTrackMax;
+      saveConfig();
+    }
+  }
+
+  // Serial debug — open Monitor at 115200 to watch calibration learn
+  Serial.print("raw="); Serial.print(raw);
+  Serial.print(" | calib min="); Serial.print(potRawMin);
+  Serial.print(" max="); Serial.println(potRawMax);
+}
+
 
 void parseSerialData() {
   if (Serial.available() > 0) {
@@ -400,9 +481,10 @@ void setup() {
   
   bleKeyboard.begin();
   
-  ESP32Encoder::useInternalWeakPullResistors = UP;
-  encoder.attachHalfQuad(18, 19);
-  encoder.setCount(0);
+  // Potentiometer setup
+  analogReadResolution(12);          // 12-bit: 0-4095
+  analogSetAttenuation(ADC_11db);    // Full 0-3.3V range
+  // potLastPercent stays -1 so the loop initializes it on first read
   
   for(int i = 0; i < 8; i++) {
     switches[i].attach(SWITCH_PINS[i], INPUT_PULLUP);
@@ -430,22 +512,38 @@ void loop() {
       }
     }
     
-    long newPosition = encoder.getCount() / 2;
-    if (newPosition != oldPosition) {
-      bool forward = newPosition > oldPosition;
-      handleEncoderAction(forward);
-      
-      if (encMode == 0) {
-        visualVolume += forward ? 5 : -5;
-        visualVolume = constrain(visualVolume, 0, 100);
+    // --- Potentiometer ---
+    int raw = readPotRaw();
+    updatePotCalibration(raw);       // Learn real min/max stably (no noise)
+    int pct = readPotPercent(raw);
+
+    // Initialize on first read
+    if (potLastPercent == -1) {
+      potLastPercent = pct;
+      potSentVolume  = pct;
+    } else if (abs(pct - potLastPercent) >= POT_DEADZONE) {
+      potLastPercent = pct;
+      lastPotChange  = millis();
+    }
+
+    // Act only after stable for 50ms
+    if (potLastPercent != potSentVolume && millis() - lastPotChange > 50) {
+      int diff     = potLastPercent - potSentVolume;
+      bool forward = diff > 0;
+      int presses  = constrain(abs(diff) / 2, 1, 50);
+      for (int k = 0; k < presses; k++) {
+        handleEncoderAction(forward);
+        delay(15); // CRITICAL: Windows drops volume keystrokes if sent too fast!
       }
-      
+      if (encMode == 0) visualVolume = potLastPercent;
+      potSentVolume = potLastPercent;
       lastActionKeyIndex = -3;
       currentState = STATE_ACTION;
       actionStartTime = millis();
-      
-      oldPosition = newPosition;
     }
+
+
+
     
     if (currentState == STATE_IDLE) {
       if (millis() - lastEyeTime > 20000) {

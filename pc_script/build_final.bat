@@ -1,0 +1,1 @@
+python -m PyInstaller --noconfirm --onedir --windowed --icon="static/logo.ico" --add-data "templates;templates/" --add-data "static;static/" --add-data "LibreHardwareMonitor;LibreHardwareMonitor/" "pc_monitor.py" --name "MacroDeck"

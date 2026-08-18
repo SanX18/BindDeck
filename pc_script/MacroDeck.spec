@@ -5,7 +5,7 @@ a = Analysis(
     ['pc_monitor.py'],
     pathex=[],
     binaries=[],
-    datas=[('templates', 'templates'), ('static', 'static')],
+    datas=[('templates', 'templates'), ('static', 'static'), ('LibreHardwareMonitor', 'LibreHardwareMonitor')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -32,6 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['static/logo.ico'],
 )
 coll = COLLECT(
     exe,

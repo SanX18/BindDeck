@@ -12,6 +12,20 @@ import webview
 import socket
 import urllib.request
 import subprocess
+
+# Monkeypatch subprocess.Popen para evitar ventanas CMD emergentes en Windows
+import subprocess
+import os
+
+if os.name == 'nt':
+    original_popen = subprocess.Popen
+    class HiddenPopen(original_popen):
+        def __init__(self, *args, **kwargs):
+            if 'creationflags' not in kwargs:
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+            super().__init__(*args, **kwargs)
+    subprocess.Popen = HiddenPopen
+
 import GPUtil
 import random
 from flask import Flask, render_template, request, jsonify
@@ -137,7 +151,16 @@ def on_key_event(e):
     return True
 
 # --- FLASK API ---
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 @app.route('/')
+
 def index():
     return render_template('index.html')
 
@@ -310,7 +333,7 @@ def find_esp32_port():
 
 def get_lhm_cpu_temp():
     try:
-        response = requests.get("http://localhost:8085/data.json", timeout=1)
+        response = requests.get("http://127.0.0.1:8085/data.json", timeout=1)
         data = response.json()
         def find_temp(node, is_cpu=False):
             if isinstance(node, dict):
@@ -389,7 +412,26 @@ def hardware_loop():
         
         time.sleep(1)
 
+
+def start_lhm():
+    lhm_path = os.path.join(base_path, 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe')
+    if os.path.exists(lhm_path):
+        try:
+            for proc in psutil.process_iter(['name']):
+                if proc.info['name'] == 'LibreHardwareMonitor.exe':
+                    return
+            # Not running, start it
+            import win32api
+            import win32con
+            import win32process
+            # Using ShellExecute to properly request elevation if needed, but wait, Popen might fail with Access Denied if it needs elevation.
+            # ShellExecute with 'runas' will trigger UAC.
+            win32api.ShellExecute(0, 'runas', lhm_path, '', os.path.dirname(lhm_path), win32con.SW_HIDE)
+        except Exception as e:
+            print("Error launching LHM:", e)
+
 def main():
+    start_lhm()
     load_config()
     
     # Arrancar monitor de hardware en background
@@ -451,6 +493,30 @@ def main():
 
     window.events.closing += on_closing
     webview.start()
+
+
+@app.route('/api/flash', methods=['POST'])
+def api_flash():
+    import time
+    try:
+        # Simulate flash
+        time.sleep(2)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/upload_anim', methods=['POST'])
+def upload_anim():
+    if 'file' not in request.files:
+        return jsonify({"success": False, "error": "No file part"})
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "No selected file"})
+    if file:
+        try:
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)})
 
 if __name__ == "__main__":
     main()

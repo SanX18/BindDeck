@@ -2,76 +2,368 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MacroDeck Blueprint</title>
+    <title>Macro Deck Control</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        
-        <!-- DEVICE MOCKUP -->
-        <div class="device-board">
-            
-            <div class="device-header">
-                <!-- OLED -->
-                <div class="oled-screen">
-                    <span style="font-size: 0.8rem; margin-bottom:5px;">OLED DISPLAY</span>
-                    <select id="animMode">
-                        <option value="0">ANIM: WAVES</option>
-                        <option value="1">ANIM: FLASH</option>
-                        <option value="2">ANIM: TEXT</option>
-                    </select>
-                </div>
-
-                <!-- ROTARY ENCODER -->
-                <div class="encoder-wrapper">
-                    <div class="encoder"></div>
-                    <select id="encMode">
-                        <option value="0">MODE: VOL</option>
-                        <option value="1">MODE: V-SCR</option>
-                        <option value="2">MODE: H-SCR</option>
-                    </select>
-                </div>
+    
+    <header class="app-header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="/static/logo.png" alt="Logo" style="width: 48px; height: 48px; border-radius: 8px;">
+            <div>
+                <h1 data-i18n="app_title">Macro Deck</h1>
+                <p data-i18n="app_subtitle">Programmable Macro Controller</p>
             </div>
-
-            <!-- KEY GRID (2x4) -->
-            <div class="keyboard-grid">
-                <button class="macro-key no-action" data-key="13">SW1</button>
-                <button class="macro-key no-action" data-key="14">SW2</button>
-                <button class="macro-key no-action" data-key="15">SW3</button>
-                <button class="macro-key no-action" data-key="16">SW4</button>
-                
-                <button class="macro-key no-action" data-key="17">SW5</button>
-                <button class="macro-key no-action" data-key="18">SW6</button>
-                <button class="macro-key no-action" data-key="19">SW7</button>
-                <button class="macro-key no-action" data-key="20">SW8</button>
-            </div>
-
         </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="test-mode-toggle" style="display: flex; align-items: center; gap: 8px; margin-right: 15px; border-right: 1px solid var(--border); padding-right: 15px;">
+                <span data-i18n="test_mode" style="font-size: 0.8rem; color: var(--text-muted); font-weight: bold;">Test Mode</span>
+                <label class="switch">
+                    <input type="checkbox" id="testModeToggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px #ef4444;"></div>
+                <span id="status-text" style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="device_disconnected">Disconnected</span>
+                <span id="ping-text" style="font-size: 0.75rem; color: var(--text-muted); display: none;">(0ms)</span>
+            </div>
+            <button id="btn-sync-header" title="Sync to Device" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; margin-left: 10px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-3.08 1.48"/></svg>
+            </button>
+            <button id="btn-tutorial-header" title="Ver tutorial" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </button>
+            <button id="btn-open-about" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </button>
+            <button id="btn-open-settings" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </div>
+    </header>
 
-        <!-- CONFIGURATION PANEL -->
-        <div class="config-panel" id="config-panel" style="display: none;">
-            <h3 id="panel-title">SELECT SWITCH</h3>
+    <div class="main-layout">
+    
+        <div id="update-banner" style="display:none; background: var(--primary); color: white; padding: 10px; text-align: center; border-radius: 8px; margin: 10px;">
+            <span data-i18n="new_version">Nueva versión disponible:</span> <span id="update-version" style="font-weight: bold;"></span>
+            <button onclick="startUpdate()" style="margin-left: 15px; padding: 5px 15px; background: white; color: var(--primary); border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" data-i18n="update_now">Actualizar ahora</button>
+        </div>
+        
+        <!-- LEFT PANEL: Global Settings -->
+        <div class="panel left-panel" style="position: relative;">
+            <div class="drag-handle" style="position: absolute; top: 15px; right: 15px; cursor: grab; color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; user-select: none;">&#8942;&#8942;</div>
+            <h2 class="panel-title" data-i18n="device_settings">Device Settings</h2>
+            
+            <div class="form-group test-mode-element">
+                <label data-i18n="oled_anim">OLED Animation (Default)</label>
+                <select id="animMode" onchange="toggleCustomAnim()">
+                    <option value="0" data-i18n="anim_0">Expanding Waves</option>
+                    <option value="1" data-i18n="anim_1">Flash Notification</option>
+                    <option value="2" data-i18n="anim_2">Minimal Text</option>
+                    <option value="3" data-i18n="anim_3">Waves + Mic Mute</option>
+                    <option value="4" data-i18n="anim_4">Imagen Personalizada (.h)</option>
+                </select>
+                
+                <div id="customAnimContainer" style="display: none; margin-top: 10px; background: var(--bg-panel); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                    <label for="customAnimFile" class="btn-secondary" style="display: inline-block; width: 100%; text-align: center; cursor: pointer; font-size: 0.85rem; padding: 0.4rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Subir Archivo .h
+                    </label>
+                    <input type="file" id="customAnimFile" accept=".h" style="display: none;" onchange="uploadCustomAnim()">
+                    <p id="customAnimStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; text-align: center; margin-bottom: 0;"></p>
+                    
+                    <div style="text-align: center; margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px;">
+                        <a href="https://ejemplo.com/animaciones" target="_blank" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: bold;">
+                            Explorar mas animaciones!
+                        </a>
+                    </div>
+                </div>
+            </div>
             
             <div class="form-group">
-                <label>ACTION TYPE</label>
-                <select id="actionType" class="config-input">
-                    <option value="none">NATIVE (PASSTHROUGH)</option>
-                    <option value="app">EXECUTE / OPEN</option>
-                    <option value="shortcut">KEYBOARD MACRO</option>
+                <label data-i18n="oled_brightness">OLED Brightness</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 12px; color: var(--text-muted);">0%</span>
+                    <input type="range" id="oledBrightness" min="0" max="100" value="100" style="flex: 1;">
+                    <span style="font-size: 12px; color: var(--text-muted);">100%</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="enc_action">Encoder Action</label>
+                <div style="display: flex; gap: 5px;">
+                    <select id="encMode" style="flex:1;">
+                        <option value="0" data-i18n="enc_0">System Volume</option>
+                        <option value="1" data-i18n="enc_1">Zoom (In/Out)</option>
+                        <option value="2" data-i18n="enc_2">Browser Tabs (Prev/Next)</option>
+                        <option value="3" data-i18n="enc_3">Undo / Redo</option>
+                    </select>
+                    <button class="btn-secondary test-mode-element" onclick="simulateAction(-3)" title="Simular Giro">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                    </button>
+                    <button class="btn-secondary test-mode-element" onclick="simulateAction(-1)" title="Simular Clic">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <label style="margin: 0;">Hardware LEDs</label>
+                    <label class="switch">
+                        <input type="checkbox" id="hwHasLeds">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);" data-i18n="hw_leds">My build has LED's</span>
+                </div>
+                
+                <div id="ledColorPicker" style="display: none; flex-direction: column; gap: 10px; background: var(--bg-input); padding: 10px; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.8rem; color: var(--text-main);" data-i18n="global_color">Global Color</span>
+                        <input type="color" id="globalLedColor" value="#22c55e" style="width: 30px; height: 30px; padding: 0; border: none; border-radius: 4px; cursor: pointer;">
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; color: var(--text-main); margin-bottom: 5px; display: block;" data-i18n="led_effect">LED Effect</span>
+                        <select id="ledEffect">
+                            <option value="0" data-i18n="led_solid">Solid Color</option>
+                            <option value="1" data-i18n="led_breath">Breathing</option>
+                            <option value="2" data-i18n="led_rainbow">Rainbow</option>
+                            <option value="3" data-i18n="led_wave">Wave on Press</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER PANEL: Visual Mockup -->
+        <div class="panel center-panel" id="panel-center" style="position: relative;">
+            <div class="drag-handle" style="position: absolute; top: 15px; right: 15px; cursor: grab; color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; user-select: none;">&#8942;&#8942;</div>
+            <div style="position: absolute; top: 1.5rem; left: 1.5rem;">
+                <h2 class="panel-title" style="margin: 0;" data-i18n="control_deck">Macro Deck</h2>
+                <p class="panel-subtitle" data-i18n="select_key_hint">Select a key to configure its action.</p>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: -10px;" data-i18n="sw_legend">(SW = Switch)</p>
+            </div>
+
+            <!-- CSS DEVICE MOCKUP -->
+            <div class="device-mockup">
+                
+                <div class="device-top">
+                    <div class="oled-mock">
+                        <div class="oled-text" id="oled-idle" style="text-align: center; font-size: 10px; line-height: 1.4;">
+                            <span style="font-weight: bold; font-size: 12px; color: #22c55e;">MACRO DECK</span><br>
+                            <span style="color: #a1a1aa;">STATUS: ONLINE</span><br>
+                            <span style="color: #60a5fa;">PROFILES LOADED</span>
+                        </div>
+                        <div class="oled-anim-layer" id="oled-anim-layer" style="display:none;"></div>
+                    </div>
+                    <div class="encoder-mock" id="encoder-knob" style="cursor: grab;"></div>
+                </div>
+
+                <div class="device-grid">
+                    <div class="keycap" data-key="13">SW 1</div>
+                    <div class="keycap" data-key="14">SW 2</div>
+                    <div class="keycap" data-key="15">SW 3</div>
+                    <div class="keycap" data-key="16">SW 4</div>
+                    
+                    <div class="keycap" data-key="17">SW 5</div>
+                    <div class="keycap" data-key="18">SW 6</div>
+                    <div class="keycap" data-key="19">SW 7</div>
+                    <div class="keycap" data-key="20">SW 8</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Action Config -->
+        <div class="panel right-panel" id="config-panel" style="position: relative; opacity: 0.5; pointer-events: none;">
+            <div class="drag-handle" style="position: absolute; top: 15px; right: 15px; cursor: grab; color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; user-select: none;">&#8942;&#8942;</div>
+            <h2 class="panel-title" style="margin-bottom: 0.5rem;" data-i18n="action">Action</h2>
+            <p class="panel-subtitle" id="panel-subtitle" data-i18n="select_key_first">Select a key first</p>
+            
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <button class="btn-secondary" style="background: var(--bg-input); border-color: var(--primary); color: var(--primary);" data-i18n="press">Press</button>
+                <button class="btn-secondary test-mode-element" onclick="simulateCurrentKey()" style="border-color: #22c55e; color: #22c55e; display:flex; align-items:center; gap:5px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Probar Pantalla
+                </button>
+                <button class="btn-secondary test-mode-element" onclick="fetch('/api/simulate_temp', {method:'POST'})" style="border-color: #ef4444; color: #ef4444; display:flex; align-items:center; gap:5px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"></path></svg>
+                    Alerta Temp
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="action_type">Action type</label>
+                <select id="actionType">
+                    <option value="none" data-i18n="action_none">No action (Passthrough)</option>
+                    <option value="app" data-i18n="action_app">Open App / Executable</option>
+                    <option value="shortcut" data-i18n="action_shortcut">Keyboard Shortcut</option>
+                    <option value="text" data-i18n="action_text">Write Text</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="anim_on_press">Animation on Press</label>
+                <select id="keyAnim">
+                    <option value="-1" data-i18n="anim_default">Default (from Device Settings)</option>
+                    <option value="0" data-i18n="anim_0">Expanding Waves</option>
+                    <option value="1" data-i18n="anim_1">Flash Notification</option>
+                    <option value="2" data-i18n="anim_2">Minimal Text</option>
+                    <option value="3" data-i18n="anim_3">Waves + Mic Mute</option>
                 </select>
             </div>
 
             <div class="form-group" id="value-group">
-                <label>TARGET / VALUE</label>
-                <input type="text" id="actionValue" class="config-input" placeholder="e.g. calc.exe / ctrl+c">
-                <small id="value-hint">Path to executable or shortcut key combination.</small>
+                <label data-i18n="value">Value</label>
+                <input type="text" id="actionValue" list="valuePresets" placeholder="e.g. calc.exe or ctrl+c">
+                <datalist id="valuePresets"></datalist>
+                <small data-i18n="value_hint">Shortcuts use + separators, for example CTRL+SHIFT+S. Actions run on the PC when the device event is received.</small>
             </div>
 
-            <button class="btn-save" id="btn-save">COMPILE & SAVE</button>
+            <div class="form-group">
+                <label data-i18n="custom_text">OLED Custom Text</label>
+                <input type="text" id="dispText" placeholder="e.g. Spotify" maxlength="15">
+                <small data-i18n="custom_text_hint">Optional. Leave empty to display default F13-F20.</small>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-primary" id="btn-save" data-i18n="save_action" style="flex: 1;">Save action</button>
+                <button class="btn-secondary" id="btn-delete" data-i18n="delete_action" style="flex: 1; border-color: var(--primary); color: #ef4444;">Delete</button>
+            </div>
         </div>
 
     </div>
-    
-    <script src="/static/app.js"></script>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal" style="display: none;">
+        <div class="modal-content panel">
+            <h2 class="panel-title" data-i18n="settings_title">App Settings</h2>
+            
+            <div class="form-group">
+                <label data-i18n="theme">Theme</label>
+                <select id="appTheme">
+                    <option value="dark" data-i18n="dark">Dark</option>
+                    <option value="light" data-i18n="light">Light</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="language">Language</label>
+                <select id="appLang">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                <input type="checkbox" id="appStartup" style="width: auto;">
+                <label for="appStartup" data-i18n="startup" style="margin:0;">Start with Windows</label>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="close_action">When clicking X</label>
+                <select id="closeMode">
+                    <option value="ask" data-i18n="close_ask">Ask me every time</option>
+                    <option value="minimize" data-i18n="close_minimize">Minimize to System Tray</option>
+                    <option value="quit" data-i18n="close_quit">Quit Application</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+                <div>
+                    <span style="display: block; font-weight: bold; margin-bottom: 5px;" data-i18n="updates">Updates</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);" id="current-version-text">v1.0.0</span>
+                </div>
+                <button class="btn-secondary" id="btn-check-updates" data-i18n="check_updates">Check for Updates</button>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn-secondary" id="btn-close-settings" data-i18n="close">Close</button>
+                <button class="btn-primary" id="btn-save-app-settings" data-i18n="save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal-overlay" id="about-modal" style="display: none;">
+        <div class="modal-content panel" style="max-width: 650px;">
+            <h2 class="panel-title" style="text-align: center; margin-bottom: 1rem;" data-i18n="about_title">Acerca de / About</h2>
+            
+            <div style="max-height: 50vh; overflow-y: auto; padding-right: 10px;">
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 1.1rem;" data-i18n="about_tab1">Sobre la App</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-muted);" data-i18n="about_desc1"></p>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 1.1rem;" data-i18n="about_tab2">Privacidad y Transparencia</h3>
+                    <ul style="font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); padding-left: 1rem;" data-i18n="about_desc2"></ul>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 1.1rem;" data-i18n="about_tab3">Términos y Soporte</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-muted);" data-i18n="about_desc3"></p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
+                <button class="btn-primary" id="btn-close-about" data-i18n="close" style="min-width: 150px;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Confirmation Modal -->
+    <div class="modal-overlay" id="close-modal" style="display: none; z-index: 10000;">
+        <div class="modal-content panel" style="max-width: 400px; text-align: center;">
+            <h2 class="panel-title" data-i18n="close_title">Close Macro Deck?</h2>
+            <p style="margin-bottom: 2rem; color: var(--text-muted);" data-i18n="close_desc">Do you want to minimize the application to the system tray so your macros keep working, or quit entirely?</p>
+            
+            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: center; gap: 10px; margin-bottom: 1.5rem;">
+                <input type="checkbox" id="closeRemember" style="width: auto;">
+                <label for="closeRemember" data-i18n="close_remember" style="margin:0;">Remember my choice</label>
+            </div>
+
+            <div style="display: flex; gap: 1rem; flex-direction: column;">
+                <button class="btn-primary" id="btn-close-minimize" data-i18n="close_minimize_btn">Minimize to Tray</button>
+                <button class="btn-secondary" id="btn-close-quit" data-i18n="close_quit_btn" style="border-color: #ef4444; color: #ef4444;">Quit Entirely</button>
+                <button class="btn-secondary" id="btn-close-cancel" data-i18n="close_cancel" style="margin-top: 0.5rem; border: none;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; margin-top: 1rem; padding-bottom: 1rem; color: var(--text-muted); font-size: 0.75rem; opacity: 0.7;">
+        <p style="margin: 0;">
+            Developed by <strong>Marc Sancho Pastor</strong> (<a href="https://github.com/SanX18" style="color: var(--primary); text-decoration: none;" target="_blank">Git: @SanX18</a>)
+            <span style="margin: 0 8px; opacity: 0.5;">|</span>
+            <a href="https://github.com/sponsors/SanX18" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; color: #ea4aaa; text-decoration: none; font-weight: 600; transition: opacity 0.2s;">
+                <svg style="width: 12px; height: 12px; margin-right: 4px; fill: currentColor;" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.25 2.5c-1.336 0-2.75 1.164-2.75 3 0 2.15 1.58 4.144 3.365 5.682A20.565 20.565 0 008 13.393a20.561 20.561 0 003.135-2.211C12.92 9.644 14.5 7.65 14.5 5.5c0-1.836-1.414-3-2.75-3-1.373 0-2.609.986-3.029 2.456a.75.75 0 01-1.442 0C6.859 3.486 5.623 2.5 4.25 2.5zM8 14.25l-.345.666-.002-.001-.006-.003-.018-.01a7.643 7.643 0 01-.31-.17 22.075 22.075 0 01-3.434-2.414C2.045 10.731 0 8.35 0 5.5 0 2.836 2.086 1 4.25 1 5.797 1 7.153 1.802 8 3.02 8.847 1.802 10.203 1 11.75 1 13.914 1 16 2.836 16 5.5c0 2.85-2.045 5.231-3.885 6.818a22.08 22.08 0 01-3.744 2.584l-.018.01-.006.003h-.002L8 14.25z"></path></svg>
+                Sponsor
+            </a>
+        </p>
+    </footer>
+
+    <script src="/static/app.js?v=27"></script>
+
+    <!-- Tutorial Modal -->
+    <div id="tutorial-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a MacroDeck!</h2>
+            <p id="tut-text" style="color: var(--text-muted); margin-bottom: 20px; min-height: 60px;">
+                Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo.
+            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="tut-progress" style="font-size: 12px; color: var(--text-muted);">1 / 4</span>
+                <div style="display: flex; gap: 10px;">
+                    <button id="tut-btn-skip" class="btn-secondary" style="width: auto; padding: 0.6rem 1.2rem;">Omitir</button>
+                    <button id="tut-btn-next" class="btn-primary" style="width: auto; margin-top: 0; padding: 0.6rem 1.2rem;">Siguiente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

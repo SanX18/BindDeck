@@ -280,6 +280,9 @@ function playOledPreview(animMode) {
     } else if (animMode == 2) {
         layer.classList.add('preview-text');
         layer.innerHTML = '<span>HIT</span>';
+    } else if (animMode == 3) {
+        layer.classList.add('preview-wave');
+        layer.innerHTML = '<span style="color: #ef4444; font-weight: bold; background: black; padding: 2px 4px; border: 1px solid #ef4444; border-radius: 4px; z-index: 10;">MUTED</span>';
     }
     
     const duration = (animMode == 2) ? 800 : 800;
@@ -342,6 +345,37 @@ async function saveSettings(silent = false) {
 }
 
 // UI EVENTS
+
+let previewVolume = 50;
+let volHideTimeout;
+
+function playOledVolume(delta) {
+    previewVolume += delta * 5;
+    if (previewVolume > 100) previewVolume = 100;
+    if (previewVolume < 0) previewVolume = 0;
+
+    const idle = document.getElementById('oled-idle');
+    const layer = document.getElementById('oled-anim-layer');
+    if(!idle || !layer) return;
+    
+    idle.style.display = 'none';
+    layer.style.display = 'flex';
+    layer.className = 'oled-anim-layer';
+    
+    layer.innerHTML = `<div style="width: 80%; text-align: center;">
+        <div style="font-size: 10px; color: #fff; margin-bottom: 2px;">VOLUMEN</div>
+        <div style="width: 100%; height: 10px; border: 1px solid #fff; border-radius: 2px; padding: 1px; box-sizing: border-box; display: flex; align-items: stretch;">
+            <div style="width: ${previewVolume}%; background: #fff; transition: width 0.1s;"></div>
+        </div>
+    </div>`;
+
+    clearTimeout(volHideTimeout);
+    volHideTimeout = setTimeout(() => {
+        layer.style.display = 'none';
+        idle.style.display = 'block';
+    }, 1500);
+}
+
 function simulateAction(id) {
     fetch('/api/simulate', { 
         method: 'POST',
@@ -511,6 +545,7 @@ window.addEventListener('mousemove', (e) => {
         currentRotation += diff > 0 ? 15 : -15;
         knob.style.transform = `rotate(${currentRotation}deg)`;
         simulateAction(-3); // Simulate giro
+        playOledVolume(diff > 0 ? 1 : -1);
         startY = e.clientY; // Reset for continuous rotation
     }
 });
@@ -655,3 +690,137 @@ document.getElementById('btn-close-quit').addEventListener('click', async () => 
     }
     fetch('/api/window/quit', { method: 'POST' });
 });
+
+function flashFirmware() {
+    const btn = document.getElementById('btn-flash-firmware');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span data-i18n="flashing">Instalando...</span>';
+    btn.disabled = true;
+    
+    fetch('/api/flash', {method: 'POST'})
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            alert("Firmware instalado correctamente!");
+        } else {
+            alert("Error instalando firmware: " + data.error);
+        }
+    })
+    .catch(e => {
+        alert("Error de conexion: " + e);
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+
+// TUTORIAL LOGIC
+const tutorialSteps = [
+    {
+        title: "¡Bienvenido a MacroDeck!",
+        text: "Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo."
+    },
+    {
+        title: "Ajustes del Dispositivo",
+        text: "En el panel de la izquierda puedes conectar tu ESP32, ya sea por USB o Wi-Fi, y cambiar el comportamiento de los LEDs y la pantalla OLED."
+    },
+    {
+        title: "Configuración de Teclas",
+        text: "En el panel de la derecha (Acción) puedes asignar atajos de teclado, abrir programas y cambiar las animaciones de cada tecla por separado."
+    },
+    {
+        title: "Modo Prueba",
+        text: "Arriba tienes el Modo Prueba. Si lo activas, puedes hacer clic en los botones de la pantalla virtual y arrastrar la rueda para simular su comportamiento en tiempo real."
+    }
+];
+
+let currentTutorialStep = 0;
+
+function showTutorialStep(step) {
+    document.getElementById('tutorial-modal').style.display = 'flex';
+    document.getElementById('tut-title').innerText = tutorialSteps[step].title;
+    document.getElementById('tut-text').innerText = tutorialSteps[step].text;
+    document.getElementById('tut-progress').innerText = (step + 1) + " / " + tutorialSteps.length;
+    
+    if (step === tutorialSteps.length - 1) {
+        document.getElementById('tut-btn-next').innerText = "Finalizar";
+    } else {
+        document.getElementById('tut-btn-next').innerText = "Siguiente";
+    }
+}
+
+function nextTutorialStep() {
+    currentTutorialStep++;
+    if (currentTutorialStep >= tutorialSteps.length) {
+        closeTutorial();
+    } else {
+        showTutorialStep(currentTutorialStep);
+    }
+}
+
+function closeTutorial() {
+    document.getElementById('tutorial-modal').style.display = 'none';
+    localStorage.setItem('tutorialSeen', 'true');
+}
+
+// Auto-show tutorial on first run
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('tut-btn-next').addEventListener('click', nextTutorialStep);
+    document.getElementById('tut-btn-skip').addEventListener('click', closeTutorial);
+
+    document.getElementById('btn-tutorial-header').addEventListener('click', () => {
+        currentTutorialStep = 0;
+        showTutorialStep(0);
+    });
+
+    if (!localStorage.getItem('tutorialSeen')) {
+        currentTutorialStep = 0;
+        showTutorialStep(0);
+    }
+});
+
+
+function toggleCustomAnim() {
+    const animMode = document.getElementById('animMode').value;
+    const container = document.getElementById('customAnimContainer');
+    if(animMode == "4") {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function uploadCustomAnim() {
+    const fileInput = document.getElementById('customAnimFile');
+    const status = document.getElementById('customAnimStatus');
+    
+    if (fileInput.files.length === 0) return;
+    
+    const file = fileInput.files[0];
+    status.innerText = "Subiendo " + file.name + "...";
+    status.style.color = "var(--text-main)";
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    fetch('/api/upload_anim', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            status.innerText = "Animacion guardada!";
+            status.style.color = "var(--primary)";
+        } else {
+            status.innerText = "Error: " + data.error;
+            status.style.color = "red";
+        }
+    })
+    .catch(err => {
+        status.innerText = "Error de conexion.";
+        status.style.color = "red";
+    });
+}

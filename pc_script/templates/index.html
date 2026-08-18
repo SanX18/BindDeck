@@ -32,6 +32,9 @@
             <button id="btn-sync-header" title="Sync to Device" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; margin-left: 10px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-3.08 1.48"/></svg>
             </button>
+            <button id="btn-tutorial-header" title="Ver tutorial" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </button>
             <button id="btn-open-about" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             </button>
@@ -55,12 +58,28 @@
             
             <div class="form-group test-mode-element">
                 <label data-i18n="oled_anim">OLED Animation (Default)</label>
-                <select id="animMode">
+                <select id="animMode" onchange="toggleCustomAnim()">
                     <option value="0" data-i18n="anim_0">Expanding Waves</option>
                     <option value="1" data-i18n="anim_1">Flash Notification</option>
                     <option value="2" data-i18n="anim_2">Minimal Text</option>
                     <option value="3" data-i18n="anim_3">Waves + Mic Mute</option>
+                    <option value="4" data-i18n="anim_4">Imagen Personalizada (.h)</option>
                 </select>
+                
+                <div id="customAnimContainer" style="display: none; margin-top: 10px; background: var(--bg-panel); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                    <label for="customAnimFile" class="btn-secondary" style="display: inline-block; width: 100%; text-align: center; cursor: pointer; font-size: 0.85rem; padding: 0.4rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Subir Archivo .h
+                    </label>
+                    <input type="file" id="customAnimFile" accept=".h" style="display: none;" onchange="uploadCustomAnim()">
+                    <p id="customAnimStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; text-align: center; margin-bottom: 0;"></p>
+                    
+                    <div style="text-align: center; margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px;">
+                        <a href="https://ejemplo.com/animaciones" target="_blank" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: bold;">
+                            Explorar mas animaciones!
+                        </a>
+                    </div>
+                </div>
             </div>
             
             <div class="form-group">
@@ -327,6 +346,24 @@
         </p>
     </footer>
 
-    <script src="/static/app.js?v=13"></script>
+    <script src="/static/app.js?v=27"></script>
+
+    <!-- Tutorial Modal -->
+    <div id="tutorial-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a MacroDeck!</h2>
+            <p id="tut-text" style="color: var(--text-muted); margin-bottom: 20px; min-height: 60px;">
+                Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo.
+            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="tut-progress" style="font-size: 12px; color: var(--text-muted);">1 / 4</span>
+                <div style="display: flex; gap: 10px;">
+                    <button id="tut-btn-skip" class="btn-secondary" style="width: auto; padding: 0.6rem 1.2rem;">Omitir</button>
+                    <button id="tut-btn-next" class="btn-primary" style="width: auto; margin-top: 0; padding: 0.6rem 1.2rem;">Siguiente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
