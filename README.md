@@ -85,5 +85,5 @@ Si este proyecto te ha sido útil, te ha inspirado o simplemente quieres invitar
 *   **Descargo de responsabilidad:** Este software y esquemas se distribuyen "tal cual" (AS IS). El creador no se hace responsable por daños al hardware derivados de un mal ensamblaje o configuración.
 
 <p align="center">
-  <i>Desarrollado por <strong>Marc Sancho Pastor (@SanX18)</strong>.</i>
+  <i>Desarrollado por <strong>Marc Sancho Pastor (@SanX18)</strong> .</i>
 </p>
