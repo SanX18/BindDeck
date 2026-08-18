@@ -42,7 +42,7 @@ Para construir tu propio Macro Deck necesitarás:
 3.  **8x Pulsadores Mecánicos** (Cualquier switch tipo Cherry MX o similar)
 4.  **1x Rotary Encoder** (Dial giratorio, de 3 a 5 pines)
 5.  **Cables Dupont** o PCB personalizada.
-6.  **Carcasa impresa en 3D** (Encuentra mis diseños en [MakerWorld](https://makerworld.com/))
+6.  **Carcasa impresa en 3D** (Encuentra mis diseños en [MakerWorld](https://makerworld.com/es/@SanX18))
 
 ### Esquema de Conexiones Básico
 *   **OLED:** SDA -> GPIO 21 | SCL -> GPIO 22
@@ -85,5 +85,5 @@ Si este proyecto te ha sido útil, te ha inspirado o simplemente quieres invitar
 *   **Descargo de responsabilidad:** Este software y esquemas se distribuyen "tal cual" (AS IS). El creador no se hace responsable por daños al hardware derivados de un mal ensamblaje o configuración.
 
 <p align="center">
-  <i>Desarrollado por <strong>Marc Sancho Pastor (@SanX18)</strong> en colaboración con Gemini Antigravity.</i>
+  <i>Desarrollado por <strong>Marc Sancho Pastor (@SanX18)</strong>.</i>
 </p>
