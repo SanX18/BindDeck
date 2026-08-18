@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150" alt="Macro Deck Logo" width="150" height="150">
   
   # Macro Deck Companion for ESP32
   
