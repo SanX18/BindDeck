@@ -60,12 +60,13 @@ El proyecto consta de dos partes: el **Firmware** (lo que va en la placa) y el *
 2. Conecta tu ESP32 por USB.
 3. Compila y sube el código usando PlatformIO (`Upload`). Las librerías necesarias (`BleKeyboard`, `Adafruit GFX`, etc.) se descargarán automáticamente.
 
-### 2. Software (PC App)
-La aplicación está escrita en Python utilizando Flask y PyWebView.
-1. Navega a la carpeta `pc_script/`.
-2. Instala las dependencias: `pip install -r requirements.txt` (Asegúrate de instalar dependencias típicas como `flask`, `pywebview`, `pyserial`, `keyboard`, `pycaw`).
-3. Ejecuta la aplicación: `python pc_monitor.py`
-4. Configura tus teclas, elige tus animaciones y ¡disfruta!
+### 2. Software (PC App) - ¡Plug & Play!
+El sistema ahora es completamente **Plug & Play**. Toda la lógica (servidor web, dependencias, animaciones y monitoreo) viene empaquetada e integrada en la propia aplicación (`MacroDeck.exe`), por lo que ya no necesitas instalar Python ni dependencias.
+
+1. Conecta tu MacroDeck por USB.
+2. Ejecuta la aplicación de escritorio (`MacroDeck.exe`). 
+3. **⚠️ Importante:** Al iniciarse, la aplicación lanzará automáticamente el programa *LibreHardwareMonitor* en segundo plano para leer las temperaturas de tu procesador y gráfica. Windows te pedirá **permisos de Administrador**; debes aceptarlos para que la telemetría se envíe correctamente a la pantalla.
+4. Configura tus macros visualmente, ajusta las animaciones y la pantalla, ¡y disfruta de tu nuevo ecosistema integrado!
 
 ---
 
