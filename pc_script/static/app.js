@@ -782,7 +782,7 @@ const tutorialSteps = [
     },
     {
         title: "Ajustes del Dispositivo",
-        text: "En el panel de la izquierda puedes conectar tu ESP32, ya sea por USB o Wi-Fi, y cambiar el comportamiento de los LEDs y la pantalla OLED."
+        text: "En el panel de la izquierda puedes conectar tu ESP32, ya sea por USB, Bluetooth o Wi-Fi, y cambiar el comportamiento de los LEDs y la pantalla OLED."
     },
     {
         title: "Configuración de Teclas",
@@ -798,7 +798,7 @@ const tutorialSteps = [
     },
     {
         title: "¡Gracias por usar MacroDeck!",
-        text: "Te agradecemos mucho que hayas descargado nuestra app. Si deseas apoyar el proyecto, puedes hacerlo a través de <a href='https://github.com/sponsors/SanX18' target='_blank' style='color: var(--primary); text-decoration: underline;'>GitHub Sponsors</a>.<br><br><small>Recuerda que también tienes el enlace a Sponsor en la parte inferior izquierda de la ventana principal.</small>"
+        text: "Te agradecemos mucho que hayas descargado nuestra app. Si deseas apoyar el proyecto, puedes hacerlo a través del botón de GitHub Sponsors que encontrarás abajo en el pie de la aplicación."
     }
 ];
 
