@@ -24,8 +24,9 @@ Este proyecto es ideal para acompañar carcasas impresas en 3D (disponibles en M
 ## ✨ Características Principales
 
 *   🚀 **8 Botones Totalmente Personalizables:** Asigna atajos de teclado (ej: `CTRL+SHIFT+S`), lanza programas (`calc.exe`, `spotify.exe`), o simplemente escribe bloques de texto completos con un clic.
-*   🎛️ **Rotary Encoder (Dial):** Controla el volumen general del sistema operativo o úsalo para hacer scroll vertical/horizontal.
-*   📺 **Pantalla OLED Interactiva:** 4 modos de animación en tiempo real (Ondas expansivas, Notificaciones Flash, Textos minimalistas y Ojos robóticos dinámicos en reposo).
+*   🎛️ **Potenciómetro Analógico:** Controla el volumen general del sistema operativo, zoom, deshacer/rehacer o pestañas, con un algoritmo de auto-calibración dinámica instantánea.
+*   📺 **Pantalla OLED Interactiva:** Animaciones en tiempo real y **Monitor de Recursos del PC** (Temperaturas y Carga de CPU/GPU en tiempo real).
+*   🔄 **Sincronización App-Hardware:** Las animaciones y estados se reflejan a la vez en la pantalla física y en la aplicación de escritorio.
 *   🏷️ **Textos Personalizados:** Define qué texto quieres que aparezca en la pantalla OLED para cada uno de los botones de manera individual.
 *   💻 **Aplicación de Escritorio (Windows):** Una interfaz gráfica limpia, moderna (Modo Claro/Oscuro) y en dos idiomas (Español/Inglés) que se ejecuta en la bandeja del sistema.
 *   🔄 **Actualizaciones OTA:** Actualiza el firmware de tu ESP32 cómodamente por USB con un solo clic desde la propia aplicación.
@@ -39,13 +40,13 @@ Para construir tu propio Macro Deck necesitarás:
 1.  **Microcontrolador ESP32** (Preferiblemente ESP32-WROOM-32 Dev Kit)
 2.  **Pantalla OLED 0.96"** I2C (128x64, SSD1306)
 3.  **8x Pulsadores Mecánicos** (Cualquier switch tipo Cherry MX o similar)
-4.  **1x Rotary Encoder** (Dial giratorio, de 3 a 5 pines)
+4.  **1x Potenciómetro Analógico** (Recomendado Lineal de 10k)
 5.  **Cables Dupont** o PCB personalizada.
 6.  **Carcasa impresa en 3D** (Encuentra mis diseños en [MakerWorld](https://makerworld.com/es/@SanX18))
 
 ### Esquema de Conexiones Básico
 *   **OLED:** SDA -> GPIO 21 | SCL -> GPIO 22
-*   **Encoder:** CLK -> GPIO 15 | DT -> GPIO 4
+*   **Potenciómetro:** Pin central (Señal) -> GPIO 34 | Extremos -> 3.3V y GND
 *   **Botones (SW1 a SW8):** Pines 13, 12, 14, 27, 26, 25, 33, 32 (Conectados a GND, usando `INPUT_PULLUP` interno).
 
 ---
