@@ -145,6 +145,17 @@
                 </div>
             </div>            
             <div class="form-group" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Configuración Wi-Fi (Para temperaturas sin cable)</label>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="wifiSSID" placeholder="Nombre de la Red (SSID)" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
+                </div>
+                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                    <input type="password" id="wifiPass" placeholder="Contraseña" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
+                </div>
+                <button class="btn-primary" onclick="saveWifiConfig()" style="width: 100%;">Guardar y Enviar al Dispositivo</button>
+            </div>
+            
+            <div class="form-group" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
                 <label style="display: block; margin-bottom: 5px;">Configuración Inicial / Rescate</label>
                 <button class="btn-secondary" id="btn-flash-bundled" style="width: 100%; border-color: var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px;" title="Instala la versión oficial del Firmware incluída en esta app">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>

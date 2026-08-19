@@ -328,14 +328,25 @@ def api_config():
         return jsonify({"status": "success"})
     return jsonify(config)
 
-@app.route('/api/preview/<int:anim_id>')
-def api_preview(anim_id):
+@app.route("/api/preview/<int:mode>", methods=["GET"])
+def api_preview(mode):
     if serial_port and serial_port.is_open:
         try:
-            serial_port.write(f"CMD:PREVIEW:{anim_id}\n".encode('utf-8'))
+            serial_port.write(f"CMD:PREVIEW:{mode}\n".encode('utf-8'))
         except:
             pass
-    return jsonify({"status": "ok"})
+    return jsonify({"success": True})
+
+@app.route("/api/send_config", methods=["POST"])
+def api_send_config():
+    data = request.json
+    cmd = data.get("cmd", "")
+    if serial_port and serial_port.is_open and cmd:
+        try:
+            serial_port.write(cmd.encode('utf-8'))
+        except:
+            pass
+    return jsonify({"success": True})
 
 @app.route('/api/simulate', methods=['POST'])
 def api_simulate():
@@ -618,10 +629,25 @@ def hardware_loop():
             
         data_str = f"C:{int(cpu_temp)},U:{int(cpu_usage)},G:{int(gpu_temp)},V:{int(gpu_usage)}\n"
         
-        # Zero-Config Wi-Fi Broadcast
+        # Zero-Config Wi-Fi Broadcast to all interfaces
         try:
             udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            udp_socket.sendto(data_str.encode('utf-8'), ('<broadcast>', 4210))
+            # Standard 255.255.255.255
+            udp_socket.sendto(data_str.encode('utf-8'), ('255.255.255.255', 4210))
+            
+            # Subnet directed broadcasts
+            for interface, snics in psutil.net_if_addrs().items():
+                for snic in snics:
+                    if snic.family == socket.AF_INET and snic.netmask and snic.address != '127.0.0.1':
+                        try:
+                            # Calculate broadcast address
+                            ip_parts = snic.address.split('.')
+                            mask_parts = snic.netmask.split('.')
+                            bcast_parts = [str(int(ip_parts[i]) | (255 - int(mask_parts[i]))) for i in range(4)]
+                            bcast_ip = '.'.join(bcast_parts)
+                            udp_socket.sendto(data_str.encode('utf-8'), (bcast_ip, 4210))
+                        except:
+                            pass
         except:
             pass
         

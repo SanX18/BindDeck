@@ -211,6 +211,19 @@ void processCommand(String data) {
         preferences.putString(pk, txt);
         preferences.end();
       }
+    } else if (data.startsWith("CFG:WIFI:")) {
+      String payload = data.substring(9);
+      int pipeIdx = payload.indexOf('|');
+      if (pipeIdx != -1) {
+        String ssid = payload.substring(0, pipeIdx);
+        String pwd = payload.substring(pipeIdx + 1);
+        preferences.begin("macrodeck", false);
+        preferences.putString("wifiSSID", ssid);
+        preferences.putString("wifiPwd", pwd);
+        preferences.end();
+        WiFi.disconnect();
+        WiFi.begin(ssid.c_str(), pwd.c_str());
+      }
     } else if (data.startsWith("CMD:PREVIEW:")) {
       previewAnimOverride = data.substring(12).toInt();
       lastActionKeyIndex = -2;
@@ -264,20 +277,23 @@ int getBatteryPercentage() {
 }
 
 void drawBatteryIcon(int x, int y, int percentage) {
+  // Draw percentage text to the left of the icon
+  display.setCursor(x, y + 1);
+  display.print(percentage);
+  display.print("%");
+  
+  // Icon offset
+  int iconX = x + 25; // 4 chars * 6px = 24px + 1px gap
+  
   // Draw battery outline
-  display.drawRect(x, y, 20, 10, SSD1306_WHITE);
-  display.fillRect(x + 20, y + 2, 2, 6, SSD1306_WHITE); // Battery tip
+  display.drawRect(iconX, y, 20, 10, SSD1306_WHITE);
+  display.fillRect(iconX + 20, y + 2, 2, 6, SSD1306_WHITE); // Battery tip
   
   // Draw fill
   int fillWidth = map(percentage, 0, 100, 0, 16);
   if (fillWidth > 0) {
-    display.fillRect(x + 2, y + 2, fillWidth, 6, SSD1306_WHITE);
+    display.fillRect(iconX + 2, y + 2, fillWidth, 6, SSD1306_WHITE);
   }
-  
-  // Draw percentage text
-  display.setCursor(x + 26, y + 1);
-  display.print(percentage);
-  display.print("%");
 }
 
 void drawIdle() {
@@ -308,23 +324,24 @@ void drawIdle() {
   
   // Header
   display.setCursor(0, 0);
+  
   if (isWireless) {
-      if (WiFi.status() == WL_CONNECTED) {
-          display.print("WIFI/BT (");
-      } else {
-          display.print("BT ONLY (");
-      }
-      int batPct = getBatteryPercentage();
-      if (batPct != -1) {
-          display.print(batPct); display.print("%)");
-          if (bleKeyboard.isConnected()) {
-              bleKeyboard.setBatteryLevel(batPct);
-          }
-      } else {
-          display.print("USB PWR)");
-      }
+    if (WiFi.status() == WL_CONNECTED) {
+      display.print("WF"); // Wi-Fi connected
+    } else {
+      display.print("BT"); // Bluetooth only
+    }
+    display.print(" STATS");
   } else {
-      display.println("--- SYSTEM STATS ---");
+    display.print("USB STATS");
+  }
+  
+  int batPct = getBatteryPercentage();
+  if (batPct != -1) {
+      drawBatteryIcon(81, 0, batPct);
+      if (bleKeyboard.isConnected()) {
+          bleKeyboard.setBatteryLevel(batPct);
+      }
   }
   
   // Data
@@ -565,8 +582,13 @@ void handleEncoderAction(bool forward) {
 }
 
 void setupWiFi() {
+  preferences.begin("macrodeck", true);
+  String ssid = preferences.getString("wifiSSID", WIFI_SSID);
+  String pwd = preferences.getString("wifiPwd", WIFI_PASSWORD);
+  preferences.end();
+  
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(ssid.c_str(), pwd.c_str());
 }
 
 void loopWiFi() {

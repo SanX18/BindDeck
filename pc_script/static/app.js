@@ -865,6 +865,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
 });
 
+function saveWifiConfig() {
+    const ssid = document.getElementById('wifiSSID').value;
+    const pwd = document.getElementById('wifiPass').value;
+    if (!ssid) return;
+    
+    fetch('/api/send_config', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({cmd: `CFG:WIFI:${ssid}|${pwd}\n`})
+    }).then(res => {
+        if(res.ok) alert("Configuración Wi-Fi enviada al dispositivo. Se reiniciará la conexión Wi-Fi.");
+    });
+}
 
 function toggleCustomAnim() {
     const animMode = document.getElementById('animMode').value;
