@@ -440,17 +440,35 @@ def api_installed_apps():
 @app.route('/api/status')
 def api_status():
     conn_type = config.get("app", {}).get("connection_type", "usb")
-    is_connected = False
-    ping = 0
-    if conn_type == "wifi":
-        is_connected = True # Assume true for UDP if configured
-        ping = random.randint(30, 85)
+    
+    is_usb = serial_port is not None and serial_port.is_open
+    is_bt = getattr(app, 'bt_connected', False)
+    
+    if is_usb:
+        return jsonify({"connected": True, "type": "USB", "ping": random.randint(8, 24)})
+    elif is_bt:
+        return jsonify({"connected": True, "type": "Bluetooth", "ping": random.randint(30, 85)})
     else:
-        is_connected = serial_port is not None and serial_port.is_open
-        if is_connected:
-            ping = random.randint(8, 24)
-            
-    return jsonify({"connected": is_connected, "ping": ping})
+        return jsonify({"connected": False, "type": "None", "ping": 0})
+
+def check_bt_status_loop():
+    while True:
+        try:
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            output = subprocess.check_output(
+                ["powershell", "-NoProfile", "-Command", "Get-PnpDevice -Class Bluetooth | Where-Object { $_.FriendlyName -match 'MacroDeck' -and $_.Status -eq 'OK' }"],
+                startupinfo=startupinfo,
+                creationflags=0x08000000,
+                text=True
+            )
+            app.bt_connected = "MacroDeck" in output
+        except Exception:
+            app.bt_connected = False
+        time.sleep(5)
+
+threading.Thread(target=check_bt_status_loop, daemon=True).start()
+
 
 @app.route('/api/window/minimize', methods=['POST'])
 def api_minimize():

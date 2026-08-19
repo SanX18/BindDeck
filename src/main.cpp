@@ -168,11 +168,14 @@ void updatePotCalibration(int raw) {
   Serial.print(" max="); Serial.println(potRawMax);
 }
 
+// Track last time we received Serial data to determine if we are on USB or Battery
+unsigned long lastSerialTime = 0;
 
 void parseSerialData() {
   if (Serial.available() > 0) {
     String data = Serial.readStringUntil('\n');
     data.trim();
+    lastSerialTime = millis(); // Update last seen time
     
     // Config commands from PC App (e.g. CFG:ANIM:1)
     if (data.startsWith("CFG:ANIM:")) {
@@ -226,22 +229,56 @@ void parseSerialData() {
   }
 }
 
+// Batery config
+const int BATTERY_PIN = 35; // Pin analogico para medir voltaje
+
+int getBatteryPercentage() {
+  // Con un divisor de voltaje (100k + 100k), el voltaje en el pin es la mitad de la bateria.
+  // Bateria max = 4.2V -> Pin = 2.1V.
+  // En el ESP32, 2.1V es aprox 2600-2800 en el ADC de 12 bits (0-4095).
+  // Estos valores deben ajustarse en base al divisor real que uses.
+  int raw = analogRead(BATTERY_PIN);
+  
+  // Si el pin no está conectado al divisor, leerá un valor muy bajo (ruido o 0)
+  // Una batería agotada (3.0V) seguiría dando > 1800. Así que si es menor a 1000, 
+  // sabemos seguro que no hay hardware de medición conectado.
+  if (raw < 1000) {
+    return -1; // -1 significa "Batería no detectada"
+  }
+  
+  // Asumiendo lectura de 0 a 4095. Para 4.2V (100%), leemos aprox 2600. Para 3.3V (0%), leemos aprox 2050.
+  // IMPORTANTE: Ajustar estos valores experimentalmente con un polímetro.
+  int minRaw = 2050; // 3.3V
+  int maxRaw = 2600; // 4.2V
+  
+  int pct = map(raw, minRaw, maxRaw, 0, 100);
+  return constrain(pct, 0, 100);
+}
+
+void drawBatteryIcon(int x, int y, int percentage) {
+  // Draw battery outline
+  display.drawRect(x, y, 20, 10, SSD1306_WHITE);
+  display.fillRect(x + 20, y + 2, 2, 6, SSD1306_WHITE); // Battery tip
+  
+  // Draw fill
+  int fillWidth = map(percentage, 0, 100, 0, 16);
+  if (fillWidth > 0) {
+    display.fillRect(x + 2, y + 2, fillWidth, 6, SSD1306_WHITE);
+  }
+  
+  // Draw percentage text
+  display.setCursor(x + 26, y + 1);
+  display.print(percentage);
+  display.print("%");
+}
+
 void drawIdle() {
   display.clearDisplay();
 
-  if (cpu_temp > 85 || gpu_temp > 85) {
-    if ((millis() / 500) % 2 == 0) { // Parpadeo cada 500ms
-      display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
-      display.setTextColor(SSD1306_BLACK);
-      display.setTextSize(2);
-      display.setCursor(20, 15);
-      display.println("ALERTA!");
-      display.setTextSize(1);
-      display.setCursor(15, 40);
-      if (cpu_temp > 85) display.print("CPU TEMP ALTA: "); else display.print("GPU TEMP ALTA: ");
-      display.println(cpu_temp > 85 ? cpu_temp : gpu_temp);
-    }
-  } else {
+  // Si no hemos recibido datos por Serial en 3 segundos, asumimos modo inalambrico (Bluetooth)
+  bool isBluetoothMode = (millis() - lastSerialTime > 3000);
+
+  if (isBluetoothMode) {
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     
@@ -249,40 +286,101 @@ void drawIdle() {
     display.println("--- SYSTEM STATS ---");
     
     display.setCursor(0, 15);
-    display.print("CPU Temp: "); display.print(cpu_temp); display.println(" C");
-    display.setCursor(0, 25);
-    display.print("CPU Load: "); display.print(cpu_usage); display.println(" %");
+    display.println("Modo: BLUETOOTH");
+    
+    int batPct = getBatteryPercentage();
+    
+    if (batPct != -1) {
+      display.setCursor(0, 30);
+      display.print("Bateria:");
+      drawBatteryIcon(55, 30, batPct);
+      
+      // Update PC via Bluetooth standard HID Battery feature
+      if (bleKeyboard.isConnected()) {
+        bleKeyboard.setBatteryLevel(batPct);
+      }
+    } else {
+      display.setCursor(0, 30);
+      display.print("Bateria: No conectada");
+    }
+  } else {
+    // Modo USB / Conectado
+    if (cpu_temp > 85 || gpu_temp > 85) {
+      if ((millis() / 500) % 2 == 0) { // Parpadeo cada 500ms
+        display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
+        display.setTextColor(SSD1306_BLACK);
+        display.setTextSize(2);
+        display.setCursor(20, 15);
+        display.println("ALERTA!");
+        display.setTextSize(1);
+        display.setCursor(15, 40);
+        if (cpu_temp > 85) display.print("CPU TEMP ALTA: "); else display.print("GPU TEMP ALTA: ");
+        display.println(cpu_temp > 85 ? cpu_temp : gpu_temp);
+      }
+    } else {
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      
+      display.setCursor(0, 0);
+      display.println("--- SYSTEM STATS ---");
+      
+      display.setCursor(0, 15);
+      display.print("CPU Temp: "); display.print(cpu_temp); display.println(" C");
+      display.setCursor(0, 25);
+      display.print("CPU Load: "); display.print(cpu_usage); display.println(" %");
 
-    display.setCursor(0, 40);
-    display.print("GPU Temp: "); display.print(gpu_temp); display.println(" C");
-    display.setCursor(0, 50);
-    display.print("GPU Load: "); display.print(gpu_usage); display.println(" %");
+      display.setCursor(0, 40);
+      display.print("GPU Temp: "); display.print(gpu_temp); display.println(" C");
+      display.setCursor(0, 50);
+      display.print("GPU Load: "); display.print(gpu_usage); display.println(" %");
+    }
   }
 
   display.display();
 }
 
 void drawUpdateScreen() {
-  display.clearDisplay();
-  
-  // Dibujar ojos estáticos de concentración
-  display.fillRoundRect(20, 10, 30, 25, 5, SSD1306_WHITE);
-  display.fillRoundRect(78, 10, 30, 25, 5, SSD1306_WHITE);
-  // Pupilas
-  display.fillCircle(35, 22, 6, SSD1306_BLACK);
-  display.fillCircle(93, 22, 6, SSD1306_BLACK);
-  
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(5, 45);
-  display.println("ACTUALIZANDO...");
-  display.setCursor(5, 55);
-  display.println("NO DESCONECTAR!");
-  
-  display.display();
-  
-  // Bucle infinito, esperando el reinicio de esptool
+  int frame = 0;
   while(true) {
+    display.clearDisplay();
+    
+    // Textos
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    
+    display.setCursor(20, 35);
+    display.println("Actualizando...");
+    
+    display.setCursor(16, 45);
+    display.println("No desconecte el");
+    
+    display.setCursor(31, 55);
+    display.println("dispositivo");
+    
+    // Spinner
+    int cx = 64;
+    int cy = 16;
+    int r = 10;
+    
+    for (int i = 0; i < 8; i++) {
+      float angle = (i * 45) * 3.14159 / 180.0;
+      int x = cx + cos(angle) * r;
+      int y = cy + sin(angle) * r;
+      
+      // Calculate dot size based on frame to create rotation effect
+      int dotDistance = (i - (frame % 8) + 8) % 8;
+      
+      if (dotDistance < 2) {
+        display.fillCircle(x, y, 2, SSD1306_WHITE); // Big dot
+      } else if (dotDistance < 4) {
+        display.drawCircle(x, y, 1, SSD1306_WHITE); // Medium dot
+      } else {
+        display.drawPixel(x, y, SSD1306_WHITE); // Small dot
+      }
+    }
+    
+    display.display();
+    frame++;
     delay(100);
   }
 }

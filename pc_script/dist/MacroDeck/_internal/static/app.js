@@ -667,7 +667,16 @@ setInterval(async () => {
         if (data.connected) {
             dot.style.background = '#22c55e';
             dot.style.boxShadow = '0 0 8px #22c55e';
-            text.innerText = i18n[lang].device_connected;
+            let ctext = i18n[lang].device_connected;
+            
+            let iconHtml = '';
+            if (data.type === 'USB') {
+                iconHtml = '<svg style="margin-left:5px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M10 15v4.5a2.5 2.5 0 0 0 5 0V15"/><rect x="8" y="9" width="8" height="6" rx="1"/></svg>';
+            } else if (data.type === 'Bluetooth') {
+                iconHtml = '<svg style="margin-left:5px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6.5 6.5 11 11L12 23V1l5.5 5.5-11 11"/></svg>';
+            }
+            text.innerHTML = ctext + iconHtml;
+            
             if (pingText) {
                 pingText.style.display = 'inline';
                 pingText.innerText = `(${data.ping}ms)`;
