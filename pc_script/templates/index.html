@@ -35,10 +35,10 @@
             <button id="btn-tutorial-header" title="Ver tutorial" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </button>
-            <button id="btn-open-about" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+            <button id="btn-open-about" title="Info" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             </button>
-            <button id="btn-open-settings" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+            <button id="btn-open-settings" title="Ajustes" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
         </div>
@@ -83,7 +83,7 @@
             </div>
             
             <div class="form-group">
-                <label data-i18n="oled_brightness">OLED Brightness</label>
+                <label><span data-i18n="oled_brightness">OLED Brightness</span>: <span id="brightness-val" style="color: var(--primary);">100%</span></label>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 12px; color: var(--text-muted);">0%</span>
                     <input type="range" id="oledBrightness" min="0" max="100" value="100" style="flex: 1;">
@@ -99,6 +99,7 @@
                         <option value="1" data-i18n="enc_1">Zoom (In/Out)</option>
                         <option value="2" data-i18n="enc_2">Browser Tabs (Prev/Next)</option>
                         <option value="3" data-i18n="enc_3">Undo / Redo</option>
+                        <option value="5">Volumen de App Específica</option>
                     </select>
                     <button class="btn-secondary test-mode-element" onclick="simulateAction(-3)" title="Simular Giro">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
@@ -108,6 +109,12 @@
                     </button>
                 </div>
             </div>
+
+              <div class="form-group" id="encAppContainer" style="display:none; border-top: 1px solid var(--border); padding-top: 15px;">
+                  <label style="display:block; margin-bottom: 5px;">Nombre del proceso de la App (.exe)</label>
+                  <div class="ac-wrap"><input type="text" id="encApp"  placeholder="Ejemplo: Spotify.exe" style="width:100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);"><div id="encAppAcList" class="ac-list"></div></div>
+              </div>
+
             
             <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: auto;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
@@ -136,6 +143,13 @@
                         </select>
                     </div>
                 </div>
+            </div>            
+            <div class="form-group" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                <label style="display: block; margin-bottom: 5px;">Configuración Inicial / Rescate</label>
+                <button class="btn-secondary" id="btn-flash-bundled" style="width: 100%; border-color: var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px;" title="Instala la versión oficial del Firmware incluída en esta app">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Instalar Firmware Oficial
+                </button>
             </div>
         </div>
 
@@ -219,8 +233,8 @@
 
             <div class="form-group" id="value-group">
                 <label data-i18n="value">Value</label>
-                <input type="text" id="actionValue" list="valuePresets" placeholder="e.g. calc.exe or ctrl+c">
-                <datalist id="valuePresets"></datalist>
+                <div class="ac-wrap"><input type="text" id="actionValue"  placeholder="e.g. calc.exe or ctrl+c"></div>
+                <div id="valueAcList" class="ac-list"></div>
                 <small data-i18n="value_hint">Shortcuts use + separators, for example CTRL+SHIFT+S. Actions run on the PC when the device event is received.</small>
             </div>
 
@@ -346,7 +360,7 @@
         </p>
     </footer>
 
-    <script src="/static/app.js?v=27"></script>
+    <script src="/static/app.js?v=38"></script>
 
     <!-- Tutorial Modal -->
     <div id="tutorial-modal" class="modal-overlay" style="display: none;">
@@ -365,5 +379,6 @@
         </div>
     </div>
 
+    
 </body>
 </html>

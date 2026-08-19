@@ -1,4 +1,16 @@
+import esptool
+
+import subprocess
+import sys
+_old_popen = subprocess.Popen
+def _new_popen(*args, **kwargs):
+    if sys.platform == 'win32':
+        kwargs['creationflags'] = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+    return _old_popen(*args, **kwargs)
+subprocess.Popen = _new_popen
+
 import time
+
 import serial
 import serial.tools.list_ports
 import psutil
@@ -12,23 +24,23 @@ import webview
 import socket
 import urllib.request
 import subprocess
-
-# Monkeypatch subprocess.Popen para evitar ventanas CMD emergentes en Windows
-import subprocess
-import os
-
-if os.name == 'nt':
-    original_popen = subprocess.Popen
-    class HiddenPopen(original_popen):
-        def __init__(self, *args, **kwargs):
-            if 'creationflags' not in kwargs:
-                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
-            super().__init__(*args, **kwargs)
-    subprocess.Popen = HiddenPopen
-
 import GPUtil
 import random
 from flask import Flask, render_template, request, jsonify
+
+# GUI / Icon dependencies
+import win32gui
+import win32ui
+import win32con
+import win32api
+import win32com.client
+from PIL import Image
+import base64
+from io import BytesIO
+from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
+import pystray
+
+
 
 def get_base_path():
     if getattr(sys, 'frozen', False):
@@ -139,11 +151,28 @@ def execute_macro(key_index):
         except Exception as e:
             print(f"Error escribiendo texto: {e}")
 
+
+def change_app_volume(app_name, up):
+    try:
+        from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            if session.Process and session.Process.name() and session.Process.name().lower() == app_name.lower():
+                volume = session._ctl.QueryInterface(ISimpleAudioVolume)
+                current_vol = volume.GetMasterVolume()
+                if up:
+                    new_vol = min(1.0, current_vol + 0.04)
+                else:
+                    new_vol = max(0.0, current_vol - 0.04)
+                volume.SetMasterVolume(new_vol, None)
+    except Exception as e:
+        print("Error changing app volume:", e)
+
 def on_key_event(e):
     if e.event_type == keyboard.KEY_DOWN:
         if e.name.startswith('f') and e.name[1:].isdigit():
             key_num = int(e.name[1:])
-            if 13 <= key_num <= 20:
+            if 13 <= key_num <= 22:
                 action_type = config["keys"].get(str(key_num), {}).get("type", "none")
                 if action_type != "none":
                     threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
@@ -164,44 +193,125 @@ def add_header(response):
 def index():
     return render_template('index.html')
 
+@app.route('/api/flash_bundled', methods=['POST'])
+def api_flash_bundled():
+    port_to_flash = find_esp32_port()
+    if not port_to_flash:
+        return jsonify({"success": False, "error": "Device not connected via USB"})
+        
+    global serial_port
+    if serial_port and serial_port.is_open:
+        try:
+            serial_port.write(b"CMD:UPDATE\n")
+            serial_port.flush()
+            time.sleep(1) # wait for OLED to render the updating screen
+        except:
+            pass
+        serial_port.close()
+        serial_port = None
+        
+    fw_path = os.path.join(base_path, 'firmware.bin')
+    if not os.path.exists(fw_path):
+        return jsonify({"success": False, "error": "Bundled firmware not found"})
+        
+    try:
+        import esptool
+        # Use python import directly to avoid subprocess launching PyInstaller executable again
+        try:
+            esptool.main(["--port", port_to_flash, "--baud", "460800", "write_flash", "-z", "0x10000", fw_path])
+        except SystemExit as e:
+            # esptool may call sys.exit(), we catch it to prevent app termination
+            if e.code != 0:
+                raise Exception(f"esptool exited with error code {e.code}")
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/flash_local', methods=['POST'])
+def api_flash_local():
+    if 'file' not in request.files:
+        return jsonify({"success": False, "error": "No file uploaded"})
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "No file selected"})
+        
+    port_to_flash = find_esp32_port()
+    if not port_to_flash:
+        return jsonify({"success": False, "error": "Device not connected via USB"})
+        
+    global serial_port
+    if serial_port and serial_port.is_open:
+        serial_port.close()
+        serial_port = None
+        
+    try:
+        file.save("local_firmware.bin")
+        cmd = [sys.executable, "-m", "esptool", "--port", port_to_flash, "--baud", "460800", "write_flash", "-z", "0x10000", "local_firmware.bin"]
+        subprocess.run(cmd, check=True)
+        if os.path.exists("local_firmware.bin"):
+            os.remove("local_firmware.bin")
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 @app.route('/api/config', methods=['GET', 'POST'])
 def api_config():
     global config
     if request.method == 'POST':
         new_cfg = request.json
+        old_esp32 = config.get("esp32", {})
+        old_keys = config.get("keys", {})
         config = new_cfg
         save_config()
         
         if serial_port and serial_port.is_open:
             try:
-                anim = new_cfg.get("esp32", {}).get("animMode", 0)
+                new_esp32 = new_cfg.get("esp32", {})
+                new_keys = new_cfg.get("keys", {})
+                
+                anim = new_esp32.get("animMode", 0)
                 if anim is None: anim = 0
-                enc = new_cfg.get("esp32", {}).get("encMode", 0)
+                if str(old_esp32.get("animMode", "")) != str(anim):
+                    serial_port.write(f"CFG:ANIM:{anim}\n".encode('utf-8'))
+                    time.sleep(0.1)
+
+                enc = new_esp32.get("encMode", 0)
                 if enc is None: enc = 0
-                brt = new_cfg.get("esp32", {}).get("brightness", 255)
+                if str(old_esp32.get("encMode", "")) != str(enc):
+                    serial_port.write(f"CFG:ENC:{enc}\n".encode('utf-8'))
+                    time.sleep(0.1)
+
+                brt = new_esp32.get("brightness", 255)
                 if brt is None: brt = 255
+                if str(old_esp32.get("brightness", "")) != str(brt):
+                    serial_port.write(f"CFG:BRT:{brt}\n".encode('utf-8'))
+                    time.sleep(0.1)
                 
-                serial_port.write(f"CFG:ANIM:{anim}\n".encode('utf-8'))
-                time.sleep(0.05)
-                serial_port.write(f"CFG:ENC:{enc}\n".encode('utf-8'))
-                time.sleep(0.05)
-                serial_port.write(f"CFG:BRT:{brt}\n".encode('utf-8'))
-                time.sleep(0.05)
-                
+                # Check if key animations changed
+                changed_anims = False
                 kb_anims = []
                 for i in range(13, 21):
-                    # default anim for key is -1
-                    key_anim = config["keys"].get(str(i), {}).get("anim", -1)
+                    key_anim = new_keys.get(str(i), {}).get("anim", -1)
+                    old_anim = old_keys.get(str(i), {}).get("anim", -1)
+                    if str(key_anim) != str(old_anim): changed_anims = True
                     kb_anims.append(str(key_anim))
-                kb_anims_str = ",".join(kb_anims)
-                serial_port.write(f"CFG:KB_ANIM:{kb_anims_str}\n".encode('utf-8'))
-                time.sleep(0.05)
                 
+                if changed_anims:
+                    kb_anims_str = ",".join(kb_anims)
+                    serial_port.write(f"CFG:KB_ANIM:{kb_anims_str}\n".encode('utf-8'))
+                    time.sleep(0.1)
+                
+                # Check if key texts changed
                 for i in range(13, 21):
-                    disp_text = config["keys"].get(str(i), {}).get("dispText", "")
-                    idx = i - 13
-                    serial_port.write(f"CFG:TXT:{idx}:{disp_text}\n".encode('utf-8'))
-                    time.sleep(0.05)
+                    disp_text = new_keys.get(str(i), {}).get("dispText", "")
+                    old_text = old_keys.get(str(i), {}).get("dispText", "")
+                    if str(disp_text) != str(old_text):
+                        idx = i - 13
+                        serial_port.write(f"CFG:TXT:{idx}:{disp_text}\n".encode('utf-8'))
+                        time.sleep(0.1)
                 
             except Exception as e:
                 print("Error enviando config al ESP32:", e)
@@ -239,6 +349,85 @@ def api_simulate_temp():
     SIMULATE_TEMP = not SIMULATE_TEMP
     return jsonify({"status": "ok", "simulate": SIMULATE_TEMP})
 
+
+def get_icon_base64(path):
+    try:
+        import win32gui, win32ui, win32con, win32api
+        from PIL import Image
+        import base64
+        from io import BytesIO
+        
+        large, small = win32gui.ExtractIconEx(path, 0)
+        if not large and not small: return ""
+        hicon = large[0] if large else small[0]
+        
+        ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
+        ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
+        
+        hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
+        mdc = hdc.CreateCompatibleDC()
+        hbmp = win32ui.CreateBitmap()
+        hbmp.CreateCompatibleBitmap(hdc, ico_x, ico_y)
+        mdc.SelectObject(hbmp)
+        
+        brush = win32ui.CreateBrush(win32con.BS_SOLID, win32api.RGB(30, 30, 30), 0)
+        mdc.FillRect((0, 0, ico_x, ico_y), brush)
+        win32gui.DrawIconEx(mdc.GetSafeHdc(), 0, 0, hicon, ico_x, ico_y, 0, None, win32con.DI_NORMAL)
+        
+        bmpinfo = hbmp.GetInfo()
+        bmpstr = hbmp.GetBitmapBits(True)
+        img = Image.frombuffer('RGB', (bmpinfo['bmWidth'], bmpinfo['bmHeight']), bmpstr, 'raw', 'BGRX', 0, 1)
+        
+        win32gui.DestroyIcon(hicon)
+        
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode()
+    except Exception as e:
+        return ""
+
+@app.route('/api/installed_apps')
+def api_installed_apps():
+    import psutil, win32com.client
+    shell = win32com.client.Dispatch('WScript.Shell')
+    paths = [
+        os.environ.get('PROGRAMDATA', 'C:\\ProgramData') + r'\Microsoft\Windows\Start Menu\Programs',
+        os.environ.get('APPDATA') + r'\Microsoft\Windows\Start Menu\Programs'
+    ]
+    apps = []
+    seen_names = set()
+    seen_exes = set()
+    try:
+        for p in paths:
+            for root, dirs, files in os.walk(p):
+                for file in files:
+                    if file.endswith('.lnk'):
+                        try:
+                            shortcut = shell.CreateShortCut(os.path.join(root, file))
+                            target = shortcut.Targetpath
+                            if target.lower().endswith('.exe'):
+                                name = os.path.splitext(file)[0]
+                                exe = os.path.basename(target)
+                                if name not in seen_names and exe.lower() not in ['update.exe', 'unins000.exe', 'uninstall.exe']:
+                                    apps.append({'name': name, 'path': target, 'exe': exe, 'icon': get_icon_base64(target)})
+                                    seen_names.add(name)
+                                    seen_exes.add(exe.lower())
+                        except: pass
+        for p in psutil.process_iter(['name', 'exe']):
+            try:
+                exe_path = p.info['exe']
+                exe_name = p.info['name']
+                if exe_path and exe_name.endswith('.exe') and exe_name.lower() not in seen_exes:
+                    if 'system32' not in exe_path.lower() and 'windowsapps' not in exe_path.lower():
+                        name = os.path.splitext(exe_name)[0].capitalize()
+                        apps.append({'name': name + ' (En ejecución)', 'path': exe_path, 'exe': exe_name, 'icon': get_icon_base64(exe_path)})
+                        seen_exes.add(exe_name.lower())
+            except: pass
+        apps.sort(key=lambda x: x['name'])
+    except Exception as e:
+        print("Error en apps:", e)
+    return jsonify(apps)
+
 @app.route('/api/status')
 def api_status():
     conn_type = config.get("app", {}).get("connection_type", "usb")
@@ -262,6 +451,7 @@ def api_minimize():
 
 @app.route('/api/window/quit', methods=['POST'])
 def api_quit():
+    kill_lhm()
     os._exit(0)
     return jsonify({"status": "ok"})
 
@@ -430,7 +620,36 @@ def start_lhm():
         except Exception as e:
             print("Error launching LHM:", e)
 
+
+def start_lhm():
+    lhm_path = os.path.join(base_path, 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe')
+    if os.path.exists(lhm_path):
+        try:
+            for proc in psutil.process_iter(['name']):
+                if proc.info['name'] == 'LibreHardwareMonitor.exe':
+                    return
+            # Not running, start it
+            import win32api
+            import win32con
+            import win32process
+            # Using ShellExecute to properly request elevation if needed, but wait, Popen might fail with Access Denied if it needs elevation.
+            # ShellExecute with 'runas' will trigger UAC.
+            win32api.ShellExecute(0, 'runas', lhm_path, '', os.path.dirname(lhm_path), win32con.SW_HIDE)
+        except Exception as e:
+            print("Error launching LHM:", e)
+
+
+def kill_lhm():
+    try:
+        import psutil
+        for proc in psutil.process_iter(['name']):
+            if proc.info['name'] == 'LibreHardwareMonitor.exe':
+                proc.kill()
+    except:
+        pass
+
 def main():
+    start_lhm()
     start_lhm()
     load_config()
     
@@ -441,6 +660,8 @@ def main():
     keyboard.hook(on_key_event, suppress=False)
 
     import pystray
+
+
     from PIL import Image
     
     window = webview.create_window('MacroDeck', app, width=1200, height=950, background_color='#001f3f')
@@ -454,6 +675,7 @@ def main():
         force_quit = True
         icon.stop()
         window.destroy()
+        kill_lhm()
         os._exit(0)
 
     def setup_tray():
@@ -478,6 +700,7 @@ def main():
         mode = config.get("app", {}).get("closeMode", "ask")
         if mode == "quit":
             force_quit = True
+            kill_lhm()
             os._exit(0)
             return True
         elif mode == "minimize":
@@ -498,6 +721,7 @@ def main():
 @app.route('/api/flash', methods=['POST'])
 def api_flash():
     import time
+
     try:
         # Simulate flash
         time.sleep(2)

@@ -458,8 +458,11 @@ void handleEncoderAction(bool forward) {
     bleKeyboard.press(KEY_LEFT_CTRL);
     bleKeyboard.write(forward ? 'y' : 'z');
     bleKeyboard.releaseAll();
+  } else if (encMode == 5) { // App Volume (F21 = left/down, F22 = right/up)
+    bleKeyboard.write(forward ? KEY_F22 : KEY_F21);
   }
 }
+
 
 void setup() {
   Serial.begin(115200);

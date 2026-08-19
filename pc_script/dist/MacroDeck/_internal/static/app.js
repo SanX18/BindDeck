@@ -1,3 +1,23 @@
+
+let installedApps = [];
+fetch('/api/installed_apps')
+    .then(r => r.json())
+    .then(apps => {
+        installedApps = apps;
+        
+        // Populate encApp (Volume Mixer)
+        
+        // Populate actionValue presets if currently 'app'
+        const actType = document.getElementById('actionType');
+        if (actType && actType.value === 'app') {
+            updateValuePresets();
+        }
+    })
+    .catch(e => console.error(e));
+
+// Override updateValuePresets to use our fetched list if actionType is 'app'
+// First, check if updateValuePresets exists.
+
 let config = {};
 let currentKey = null;
 
@@ -207,8 +227,26 @@ async function fetchConfig() {
         if (config.esp32) {
             document.getElementById('animMode').value = config.esp32.animMode || 0;
             document.getElementById('encMode').value = config.esp32.encMode || 0;
+
+    if (document.getElementById('encMode')) {
+        if (document.getElementById('encAppContainer')) document.getElementById('encAppContainer').style.display = (document.getElementById('encMode').value == 5) ? 'block' : 'none';
+    }
+
+            if (document.getElementById('encApp')) document.getElementById('encApp').value = config.esp32.encApp || '';
+
+    const encModeSelect = document.getElementById('encMode');
+    if (encModeSelect) {
+        
+        
+    
+    
+    }
+
             if (config.esp32.brightness !== undefined) {
-                document.getElementById('oledBrightness').value = Math.round((config.esp32.brightness / 255) * 100);
+                const bVal = Math.round((config.esp32.brightness / 255) * 100);
+                document.getElementById('oledBrightness').value = bVal;
+                const valSpan = document.getElementById('brightness-val');
+                if(valSpan) valSpan.innerText = bVal + '%';
             }
             if (config.esp32.hwLeds !== undefined) {
                 document.getElementById('hwHasLeds').checked = config.esp32.hwLeds;
@@ -306,6 +344,7 @@ async function saveSettings(silent = false) {
     if (!config.esp32) config.esp32 = {};
     config.esp32.animMode = parseInt(document.getElementById('animMode').value);
     config.esp32.encMode = parseInt(document.getElementById('encMode').value);
+    if (document.getElementById('encApp')) config.esp32.encApp = document.getElementById('encApp').value;
     config.esp32.brightness = Math.round((parseInt(document.getElementById('oledBrightness').value) / 100) * 255);
     config.esp32.hwLeds = document.getElementById('hwHasLeds').checked;
     config.esp32.ledColor = document.getElementById('globalLedColor').value;
@@ -415,7 +454,17 @@ document.querySelectorAll('.keycap').forEach(btn => {
     });
 });
 
-document.getElementById('actionType').addEventListener('change', (e) => updatePresets(e.target.value));
+document.getElementById('actionType').addEventListener('change', (e) => {
+    updatePresets(e.target.value);
+    const actIn = document.getElementById('actionValue');
+    const actLst = document.getElementById('valueAcList');
+    if (e.target.value === 'app' && actIn && actLst) {
+        actIn.focus();
+        updateAcList(actIn, actLst, 'action');
+    } else if (actLst) {
+        actLst.style.display = 'none';
+    }
+});
 
 document.getElementById('btn-save').addEventListener('click', () => saveSettings(false));
 
@@ -822,5 +871,133 @@ function uploadCustomAnim() {
     .catch(err => {
         status.innerText = "Error de conexion.";
         status.style.color = "red";
+    });
+}
+
+
+
+
+
+document.getElementById('encMode').addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (document.getElementById('encAppContainer')) document.getElementById('encAppContainer').style.display = (val == 5) ? 'block' : 'none';
+});
+
+
+function buildAcList(inputEl, listEl, type) {
+    inputEl.addEventListener('focus', () => updateAcList(inputEl, listEl, type));
+    inputEl.addEventListener('click', () => updateAcList(inputEl, listEl, type));
+    inputEl.addEventListener('input', () => updateAcList(inputEl, listEl, type));
+
+    document.addEventListener('click', (e) => {
+        if (!inputEl.contains(e.target) && !listEl.contains(e.target)) listEl.style.display = 'none';
+    });
+    window.addEventListener('scroll', (e) => {
+        if (e.target === listEl || listEl.contains(e.target)) return;
+        if (listEl.style.display === 'block') {
+            const rect = inputEl.getBoundingClientRect();
+            listEl.style.top = rect.bottom + 'px';
+            listEl.style.left = rect.left + 'px';
+            // Hide if it goes off screen
+            if (rect.bottom < 0 || rect.top > window.innerHeight || rect.width === 0) {
+                listEl.style.display = 'none';
+            }
+        }
+    }, true);
+
+}
+function updateAcList(inputEl, listEl, type) {
+    if ((type === 'action' && document.getElementById('actionType').value !== 'app') || !installedApps.length) {
+        listEl.style.display = 'none';
+        return;
+    }
+    const q = inputEl.value.toLowerCase();
+    const filtered = installedApps.filter(a => a.name.toLowerCase().includes(q) || a.exe.toLowerCase().includes(q));
+    listEl.innerHTML = '';
+    if (filtered.length === 0) { listEl.style.display = 'none'; return; }
+    
+    filtered.forEach(a => {
+        const item = document.createElement('div');
+        item.className = 'ac-item';
+        
+        const img = document.createElement('img');
+        img.src = a.icon || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="%23444"/></svg>';
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'ac-text';
+        const nameDiv = document.createElement('div'); nameDiv.className = 'ac-name'; nameDiv.innerText = a.name;
+        const pathDiv = document.createElement('div'); pathDiv.className = 'ac-path'; pathDiv.innerText = type === 'enc' ? a.exe : a.path;
+        
+        textDiv.appendChild(nameDiv); textDiv.appendChild(pathDiv);
+        item.appendChild(img); item.appendChild(textDiv);
+        
+        item.addEventListener('click', () => {
+            inputEl.value = type === 'enc' ? a.exe : a.path;
+            listEl.style.display = 'none';
+            // trigger save
+            if (type === 'enc') {
+                config.esp32.encApp = a.exe;
+                saveConfig();
+            } else {
+                config.keys[currentKey].value = a.path;
+                saveConfig();
+            }
+        });
+        listEl.appendChild(item);
+    });
+        listEl.style.display = 'block';
+    const rect = inputEl.getBoundingClientRect();
+    listEl.style.position = 'fixed';
+    listEl.style.top = rect.bottom + 'px';
+    listEl.style.left = rect.left + 'px';
+    listEl.style.width = rect.width + 'px';
+
+}
+
+setTimeout(() => {
+    const encIn = document.getElementById('encApp');
+    const encLst = document.getElementById('encAppAcList');
+    if (encIn && encLst) buildAcList(encIn, encLst, 'enc');
+    
+    const actIn = document.getElementById('actionValue');
+    const actLst = document.getElementById('valueAcList');
+    if (actIn && actLst) buildAcList(actIn, actLst, 'action');
+}, 1000);
+
+let brtTimeout;
+document.getElementById('oledBrightness').addEventListener('input', (e) => {
+    const valSpan = document.getElementById('brightness-val');
+    if (valSpan) valSpan.innerText = e.target.value + '%';
+    clearTimeout(brtTimeout);
+    brtTimeout = setTimeout(() => {
+        saveSettings(true);
+    }, 200); // Debounce real-time update
+});
+
+// Flash bundled firmware
+const btnFlashBundled = document.getElementById('btn-flash-bundled');
+if (btnFlashBundled) {
+    btnFlashBundled.addEventListener('click', async () => {
+        const lang = document.getElementById('appLang').value || 'en';
+        if(!confirm(lang === 'es' ? '¿Seguro que quieres instalar el Firmware Oficial en el dispositivo conectado? Se borrará el anterior.' : 'Are you sure you want to install the Official Firmware? Device will be overwritten.')) return;
+        
+        const originalText = btnFlashBundled.innerText;
+        btnFlashBundled.innerText = (lang === 'es') ? 'Instalando Firmware...' : 'Installing...';
+        btnFlashBundled.disabled = true;
+        
+        try {
+            const res = await fetch('/api/flash_bundled', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert(lang === 'es' ? '¡Firmware instalado con éxito! El dispositivo se está reiniciando.' : 'Firmware installed successfully!');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch(err) {
+            alert('Connection error');
+        }
+        
+        btnFlashBundled.innerText = originalText;
+        btnFlashBundled.disabled = false;
     });
 }

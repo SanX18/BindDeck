@@ -60,7 +60,7 @@ body {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow-y: auto; overflow-x: hidden;
 }
 .panel::-webkit-scrollbar { width: 6px; }
 .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
@@ -449,3 +449,13 @@ body.test-mode-active .test-mode-element {
 }
 . d r a g g i n g   {   o p a c i t y :   0 . 4 ;   }  
  
+
+/* Autocomplete */
+.ac-wrap { position: relative; width: 100%; }
+.ac-list { position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; overflow-x: hidden; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: none; }
+.ac-item { display: flex; align-items: center; padding: 8px; cursor: pointer; border-bottom: 1px solid var(--border); }
+.ac-item:hover { background: var(--bg-body); }
+.ac-item img { width: 16px; height: 16px; margin-right: 8px; border-radius: 3px; flex-shrink: 0; }
+.ac-item .ac-text { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
+.ac-item .ac-name { font-size: 13px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-item .ac-path { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
