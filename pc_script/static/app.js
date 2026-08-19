@@ -798,7 +798,7 @@ const tutorialSteps = [
     },
     {
         title: "¡Gracias por usar MacroDeck!",
-        text: "Te agradecemos mucho que hayas descargado nuestra app. Si deseas apoyar el proyecto, puedes hacerlo a través del botón de GitHub Sponsors que encontrarás abajo en el pie de la aplicación."
+        text: "Te agradecemos mucho que hayas descargado nuestra app. Si deseas apoyar el proyecto, puedes hacerlo a través de <a href='https://github.com/sponsors/SanX18' target='_blank' style='color: var(--primary); text-decoration: underline;'>GitHub Sponsors</a>, o mediante el botón que encontrarás abajo en el pie de la aplicación."
     }
 ];
 
