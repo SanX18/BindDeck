@@ -20,7 +20,7 @@ Preferences preferences;
 // Potentiometer
 const int POT_PIN      = 34;
 const int POT_SAMPLES  = 32;  // Increased for better noise immunity
-const int POT_DEADZONE = 2;   // Reduced deadzone for better sensitivity
+const int POT_DEADZONE = 4;   // Reduced deadzone for better sensitivity
 
 // Calibrated range — saved to flash, updated automatically
 int potRawMin = 400;   // Defaults: conservative. Updated when pot hits stops.
@@ -28,7 +28,7 @@ int potRawMax = 3700;
 
 // Tracking vars (NOT saved — reset every boot, initialized to ADC extremes)
 // Starting at 4095/0 means ANY real reading immediately starts tracking.
-int   potTrackMin     = 4095;
+int   potTrackMin     = 32767;
 int   potTrackMax     = 0;
 unsigned long potTrackMinSince = 0;
 unsigned long potTrackMaxSince = 0;
@@ -102,11 +102,12 @@ void loadConfig() {
     sprintf(keyTxt, "kbtxt%d", i);
     keyTexts[i] = preferences.getString(keyTxt, "");
   }
-  potRawMin = preferences.getInt("potRawMin", 400);
-  potRawMax = preferences.getInt("potRawMax", 3700);
+  potRawMin = 32767; // Force reset auto-calibration
+  potRawMax = 0;
+  // cleared
   // potTrackMin/Max intentionally NOT loaded — reset to extremes every boot
   // so calibration can learn from the very first use each session
-  potTrackMin = 4095;
+  potTrackMin = 32767;
   potTrackMax = 0;
   preferences.end();
 }
@@ -123,7 +124,7 @@ int readPotRaw() {
 
 // Returns potentiometer position as 0-100% using calibrated range
 int readPotPercent(int raw) {
-  int pct = map(raw, potRawMin, potRawMax, 0, 100);
+  int pct = (potRawMax > potRawMin) ? map(raw, potRawMin, potRawMax, 0, 100) : 0;
   return constrain(pct, 0, 100);
 }
 
@@ -515,38 +516,51 @@ void loop() {
       }
     }
     
-    // --- Potentiometer ---
+    // --- Dynamic Range Tracking ---
+    // Instantly adapts to your potentiometer's real physical range without deadzones.
     int raw = readPotRaw();
-    updatePotCalibration(raw);       // Learn real min/max stably (no noise)
-    int pct = readPotPercent(raw);
+    static int pMin = 4095;
+    static int pMax = 0;
+    if (raw < pMin) pMin = raw;
+    if (raw > pMax) pMax = raw;
+    
+    int range = pMax - pMin;
+    if (range < 500) range = 4095; // Default safe range before we discover the real one
+    
+    // We want EXACTLY 55 steps (110% volume) over the entire physical rotation.
+    // This perfectly covers 0-100% in Windows and avoids stopping at 50%.
+    int rawPerStep = range / 55; 
 
     // Initialize on first read
-    if (potLastPercent == -1) {
-      potLastPercent = pct;
-      potSentVolume  = pct;
-    } else if (abs(pct - potLastPercent) >= POT_DEADZONE) {
-      potLastPercent = pct;
-      lastPotChange  = millis();
+    static int potLastRaw = -1;
+    if (potLastRaw == -1) {
+      potLastRaw = raw;
     }
 
-    // Act only after stable for 50ms
-    if (potLastPercent != potSentVolume && millis() - lastPotChange > 50) {
-      int diff     = potLastPercent - potSentVolume;
-      bool forward = diff > 0;
-      int presses  = constrain(abs(diff) / 2, 1, 50);
-      for (int k = 0; k < presses; k++) {
+    // Non-blocking smooth accumulator
+    static unsigned long lastPotSend = 0;
+    int diff = raw - potLastRaw;
+    
+    if (abs(diff) >= rawPerStep) {
+      if (millis() - lastPotSend > 15) {
+        bool forward = diff > 0;
+        
         handleEncoderAction(forward);
-        delay(15); // CRITICAL: Windows drops volume keystrokes if sent too fast!
+        
+        // Advance our tracker by exactly one step (leaving remainder in the accumulator for slow turns)
+        potLastRaw += forward ? rawPerStep : -rawPerStep;
+        lastPotSend = millis();
+        
+        if (encMode == 0) {
+           visualVolume += forward ? 2 : -2;
+           if (visualVolume < 0) visualVolume = 0;
+           if (visualVolume > 100) visualVolume = 100;
+        }
+        lastActionKeyIndex = -3;
+        currentState = STATE_ACTION;
+        actionStartTime = millis();
       }
-      if (encMode == 0) visualVolume = potLastPercent;
-      potSentVolume = potLastPercent;
-      lastActionKeyIndex = -3;
-      currentState = STATE_ACTION;
-      actionStartTime = millis();
     }
-
-
-
     
     if (currentState == STATE_IDLE) {
       if (millis() - lastEyeTime > 20000) {
