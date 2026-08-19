@@ -777,6 +777,10 @@ const tutorialSteps = [
         text: "Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo."
     },
     {
+        title: "Primer Paso: Instalar Firmware",
+        text: "Para que el ESP32 funcione con la configuración de MacroDeck, el primer paso indispensable es <strong>instalar el firmware</strong> utilizando el panel correspondiente de instalación."
+    },
+    {
         title: "Ajustes del Dispositivo",
         text: "En el panel de la izquierda puedes conectar tu ESP32, ya sea por USB o Wi-Fi, y cambiar el comportamiento de los LEDs y la pantalla OLED."
     },
@@ -785,8 +789,16 @@ const tutorialSteps = [
         text: "En el panel de la derecha (Acción) puedes asignar atajos de teclado, abrir programas y cambiar las animaciones de cada tecla por separado."
     },
     {
+        title: "Sincronizar Cambios",
+        text: "Recuerda que <strong>tras cada cambio</strong> que realices en la configuración, debes pulsar el botón superior de <strong>Sincronizar Dispositivo</strong> para aplicarlos al ESP32."
+    },
+    {
         title: "Modo Prueba",
         text: "Arriba tienes el Modo Prueba. Si lo activas, puedes hacer clic en los botones de la pantalla virtual y arrastrar la rueda para simular su comportamiento en tiempo real."
+    },
+    {
+        title: "¡Gracias por usar MacroDeck!",
+        text: "Te agradecemos mucho que hayas descargado nuestra app. Si deseas apoyar el proyecto, puedes hacerlo a través de <a href='https://github.com/sponsors/SanX18' target='_blank' style='color: var(--primary); text-decoration: underline;'>GitHub Sponsors</a>.<br><br><small>Recuerda que también tienes el enlace a Sponsor en la parte inferior izquierda de la ventana principal.</small>"
     }
 ];
 
@@ -795,7 +807,7 @@ let currentTutorialStep = 0;
 function showTutorialStep(step) {
     document.getElementById('tutorial-modal').style.display = 'flex';
     document.getElementById('tut-title').innerText = tutorialSteps[step].title;
-    document.getElementById('tut-text').innerText = tutorialSteps[step].text;
+    document.getElementById('tut-text').innerHTML = tutorialSteps[step].text;
     document.getElementById('tut-progress').innerText = (step + 1) + " / " + tutorialSteps.length;
     
     if (step === tutorialSteps.length - 1) {
