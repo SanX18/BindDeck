@@ -144,6 +144,20 @@
                     </div>
                 </div>
             </div>            
+            <details class="form-group" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; cursor: pointer;">
+                <summary style="font-weight: bold; margin-bottom: 10px; color: var(--primary);">WIFI (TEMP SIN CABLES)</summary>
+                <div style="margin-bottom: 10px; font-size: 13px;">
+                    Estado: <span id="wifiStatusText" style="color: var(--text-muted);">Comprobando...</span>
+                </div>
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <input type="text" id="wifiSSID" placeholder="Nombre de la Red (SSID)" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
+                </div>
+                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                    <input type="password" id="wifiPass" placeholder="Contraseña" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
+                </div>
+                <button class="btn-primary" onclick="saveWifiConfig()" style="width: 100%;">Guardar y Enviar al Dispositivo</button>
+            </details>
+            
             <div class="form-group" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
                 <label style="display: block; margin-bottom: 5px;">Configuración Inicial / Rescate</label>
                 <button class="btn-secondary" id="btn-flash-bundled" style="width: 100%; border-color: var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px;" title="Instala la versión oficial del Firmware incluída en esta app">

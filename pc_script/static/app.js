@@ -659,6 +659,20 @@ setInterval(async () => {
         const res = await fetch('/api/status?t=' + new Date().getTime());
         const data = await res.json();
         
+        // WiFi Status
+        fetch('/api/get_wifi_status').then(r => r.json()).then(wifi => {
+            const wifiSpan = document.getElementById('wifiStatusText');
+            if(wifiSpan) {
+                if(wifi.connected) {
+                    wifiSpan.innerText = `Conectado a ${wifi.ssid} (${wifi.ip})`;
+                    wifiSpan.style.color = '#4ade80';
+                } else {
+                    wifiSpan.innerText = `Desconectado`;
+                    wifiSpan.style.color = 'var(--text-muted)';
+                }
+            }
+        }).catch(e => {});
+        
         const dot = document.getElementById('status-dot');
         const text = document.getElementById('status-text');
         const pingText = document.getElementById('ping-text');

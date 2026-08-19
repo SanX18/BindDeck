@@ -224,6 +224,18 @@ void processCommand(String data) {
         WiFi.disconnect();
         WiFi.begin(ssid.c_str(), pwd.c_str());
       }
+    } else if (data.startsWith("CMD:GET_WIFI")) {
+      if (WiFi.status() == WL_CONNECTED) {
+        preferences.begin("macrodeck", true);
+        String ssid = preferences.getString("wifiSSID", WIFI_SSID);
+        preferences.end();
+        Serial.print("WIFI_INFO:");
+        Serial.print(ssid);
+        Serial.print(",");
+        Serial.println(WiFi.localIP().toString());
+      } else {
+        Serial.println("WIFI_INFO:DISCONNECTED,0.0.0.0");
+      }
     } else if (data.startsWith("CMD:PREVIEW:")) {
       previewAnimOverride = data.substring(12).toInt();
       lastActionKeyIndex = -2;
@@ -296,6 +308,21 @@ void drawBatteryIcon(int x, int y, int percentage) {
   }
 }
 
+void drawWiFiIcon(int x, int y) {
+  // Simple Wi-Fi waves
+  display.drawPixel(x+4, y+6, SSD1306_WHITE);
+  display.drawLine(x+2, y+4, x+6, y+4, SSD1306_WHITE);
+  display.drawLine(x, y+2, x+8, y+2, SSD1306_WHITE);
+}
+
+void drawBTIcon(int x, int y) {
+  display.drawLine(x+3, y, x+3, y+8, SSD1306_WHITE);
+  display.drawLine(x+3, y, x+5, y+2, SSD1306_WHITE);
+  display.drawLine(x+5, y+2, x+1, y+6, SSD1306_WHITE);
+  display.drawLine(x+3, y+8, x+5, y+6, SSD1306_WHITE);
+  display.drawLine(x+5, y+6, x+1, y+2, SSD1306_WHITE);
+}
+
 void drawIdle() {
   display.clearDisplay();
 
@@ -323,17 +350,17 @@ void drawIdle() {
   display.setTextColor(SSD1306_WHITE);
   
   // Header
-  display.setCursor(0, 0);
-  
   if (isWireless) {
     if (WiFi.status() == WL_CONNECTED) {
-      display.print("WF"); // Wi-Fi connected
+      drawWiFiIcon(0, 0);
     } else {
-      display.print("BT"); // Bluetooth only
+      drawBTIcon(0, 0);
     }
-    display.print(" STATS");
+    display.setCursor(12, 0);
+    display.print("--- PC STATS ---");
   } else {
-    display.print("USB STATS");
+    display.setCursor(0, 0);
+    display.print("--- PC STATS ---");
   }
   
   int batPct = getBatteryPercentage();

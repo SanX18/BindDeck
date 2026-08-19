@@ -337,6 +337,24 @@ def api_preview(mode):
             pass
     return jsonify({"success": True})
 
+@app.route("/api/get_wifi_status", methods=["GET"])
+def api_get_wifi_status():
+    if serial_port and serial_port.is_open:
+        try:
+            serial_port.write(b"CMD:GET_WIFI\n")
+            # Wait for response
+            serial_port.timeout = 1
+            for _ in range(5): # retry reading a few lines
+                line = serial_port.readline().decode('utf-8', errors='ignore').strip()
+                if line.startswith("WIFI_INFO:"):
+                    parts = line.split(":")[1].split(",")
+                    ssid = parts[0] if len(parts) > 0 else ""
+                    ip = parts[1] if len(parts) > 1 else ""
+                    return jsonify({"connected": ssid != "DISCONNECTED", "ssid": ssid, "ip": ip})
+        except:
+            pass
+    return jsonify({"connected": False, "ssid": "", "ip": ""})
+
 @app.route("/api/send_config", methods=["POST"])
 def api_send_config():
     data = request.json
