@@ -6,6 +6,12 @@
 #include <Bounce2.h>
 #include <Preferences.h>
 #include "RoboEyes.h"
+#include <WiFi.h>
+#include <WiFiUdp.h>
+
+const char* WIFI_SSID = "AIRCONECT_FIBRA-5865_5G";
+const char* WIFI_PASSWORD = "ZnP8A6F53bMV[{I,";
+WiFiUDP udp;
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -98,15 +104,12 @@ void loadConfig() {
     sprintf(key, "kbanim%d", i);
     keyAnims[i] = preferences.getInt(key, -1);
     
-    char keyTxt[10];
-    sprintf(keyTxt, "kbtxt%d", i);
-    keyTexts[i] = preferences.getString(keyTxt, "");
+    sprintf(key, "kbtxt%d", i);
+    keyTexts[i] = preferences.getString(key, "");
   }
-  potRawMin = 32767; // Force reset auto-calibration
-  potRawMax = 0;
-  // cleared
-  // potTrackMin/Max intentionally NOT loaded — reset to extremes every boot
-  // so calibration can learn from the very first use each session
+  potRawMin = preferences.getInt("potRawMin", 400);
+  potRawMax = preferences.getInt("potRawMax", 3700);
+  
   potTrackMin = 32767;
   potTrackMax = 0;
   preferences.end();
@@ -168,15 +171,11 @@ void updatePotCalibration(int raw) {
   Serial.print(" max="); Serial.println(potRawMax);
 }
 
-// Track last time we received Serial data to determine if we are on USB or Battery
-unsigned long lastSerialTime = 0;
+// Track last time we received data (Serial or WiFi)
+unsigned long lastDataTime = 0;
 
-void parseSerialData() {
-  if (Serial.available() > 0) {
-    String data = Serial.readStringUntil('\n');
-    data.trim();
-    lastSerialTime = millis(); // Update last seen time
-    
+void processCommand(String data) {
+    lastDataTime = millis();
     // Config commands from PC App (e.g. CFG:ANIM:1)
     if (data.startsWith("CFG:ANIM:")) {
       animMode = data.substring(9).toInt();
@@ -184,8 +183,8 @@ void parseSerialData() {
     } else if (data.startsWith("CFG:ENC:")) {
       encMode = data.substring(8).toInt();
       saveConfig();
-    } else if (data.startsWith("CFG:BRT:")) {
-      brightness = data.substring(8).toInt();
+    } else if (data.startsWith("CFG:BRIGHT:")) {
+      brightness = data.substring(11).toInt();
       display.ssd1306_command(SSD1306_SETCONTRAST);
       display.ssd1306_command(brightness);
       saveConfig();
@@ -225,6 +224,15 @@ void parseSerialData() {
       actionStartTime = millis();
     } else if (data.indexOf("C:") != -1 && data.indexOf("G:") != -1) {
       sscanf(data.c_str(), "C:%d,U:%d,G:%d,V:%d", &cpu_temp, &cpu_usage, &gpu_temp, &gpu_usage);
+    }
+}
+
+void parseSerialData() {
+  if (Serial.available()) {
+    String data = Serial.readStringUntil('\n');
+    data.trim();
+    if (data.length() > 0) {
+      processCommand(data);
     }
   }
 }
@@ -275,66 +283,60 @@ void drawBatteryIcon(int x, int y, int percentage) {
 void drawIdle() {
   display.clearDisplay();
 
-  // Si no hemos recibido datos por Serial en 3 segundos, asumimos modo inalambrico (Bluetooth)
-  bool isBluetoothMode = (millis() - lastSerialTime > 3000);
+  // Si no hemos recibido datos (ni por USB ni por WiFi) en 3 segundos,
+  // asumimos que no hay PC conectado o hay problemas de conexion
+  bool isWireless = (millis() - lastDataTime > 3000);
 
-  if (isBluetoothMode) {
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    
-    display.setCursor(0, 0);
-    display.println("--- SYSTEM STATS ---");
-    
-    display.setCursor(0, 15);
-    display.println("Modo: BLUETOOTH");
-    
-    int batPct = getBatteryPercentage();
-    
-    if (batPct != -1) {
-      display.setCursor(0, 30);
-      display.print("Bateria:");
-      drawBatteryIcon(55, 30, batPct);
-      
-      // Update PC via Bluetooth standard HID Battery feature
-      if (bleKeyboard.isConnected()) {
-        bleKeyboard.setBatteryLevel(batPct);
-      }
-    } else {
-      display.setCursor(0, 30);
-      display.print("Bateria: No conectada");
-    }
-  } else {
-    // Modo USB / Conectado
-    if (cpu_temp > 85 || gpu_temp > 85) {
-      if ((millis() / 500) % 2 == 0) { // Parpadeo cada 500ms
-        display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
-        display.setTextColor(SSD1306_BLACK);
-        display.setTextSize(2);
-        display.setCursor(20, 15);
-        display.println("ALERTA!");
-        display.setTextSize(1);
-        display.setCursor(15, 40);
-        if (cpu_temp > 85) display.print("CPU TEMP ALTA: "); else display.print("GPU TEMP ALTA: ");
-        display.println(cpu_temp > 85 ? cpu_temp : gpu_temp);
-      }
-    } else {
+  if (cpu_temp > 85 || gpu_temp > 85) {
+    if ((millis() / 500) % 2 == 0) { // Parpadeo cada 500ms
+      display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
+      display.setTextColor(SSD1306_BLACK);
+      display.setTextSize(2);
+      display.setCursor(20, 15);
+      display.println("ALERTA!");
       display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      
-      display.setCursor(0, 0);
-      display.println("--- SYSTEM STATS ---");
-      
-      display.setCursor(0, 15);
-      display.print("CPU Temp: "); display.print(cpu_temp); display.println(" C");
-      display.setCursor(0, 25);
-      display.print("CPU Load: "); display.print(cpu_usage); display.println(" %");
-
-      display.setCursor(0, 40);
-      display.print("GPU Temp: "); display.print(gpu_temp); display.println(" C");
-      display.setCursor(0, 50);
-      display.print("GPU Load: "); display.print(gpu_usage); display.println(" %");
+      display.setCursor(15, 40);
+      if (cpu_temp > 85) display.print("CPU TEMP ALTA: "); else display.print("GPU TEMP ALTA: ");
+      display.println(cpu_temp > 85 ? cpu_temp : gpu_temp);
+      display.display();
+      return;
     }
   }
+  
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  
+  // Header
+  display.setCursor(0, 0);
+  if (isWireless) {
+      if (WiFi.status() == WL_CONNECTED) {
+          display.print("WIFI/BT (");
+      } else {
+          display.print("BT ONLY (");
+      }
+      int batPct = getBatteryPercentage();
+      if (batPct != -1) {
+          display.print(batPct); display.print("%)");
+          if (bleKeyboard.isConnected()) {
+              bleKeyboard.setBatteryLevel(batPct);
+          }
+      } else {
+          display.print("USB PWR)");
+      }
+  } else {
+      display.println("--- SYSTEM STATS ---");
+  }
+  
+  // Data
+  display.setCursor(0, 15);
+  display.print("CPU Temp: "); display.print(cpu_temp); display.println(" C");
+  display.setCursor(0, 25);
+  display.print("CPU Load: "); display.print(cpu_usage); display.println(" %");
+
+  display.setCursor(0, 40);
+  display.print("GPU Temp: "); display.print(gpu_temp); display.println(" C");
+  display.setCursor(0, 50);
+  display.print("GPU Load: "); display.print(gpu_usage); display.println(" %");
 
   display.display();
 }
@@ -562,10 +564,41 @@ void handleEncoderAction(bool forward) {
   }
 }
 
+void setupWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+}
+
+void loopWiFi() {
+  if (WiFi.status() == WL_CONNECTED) {
+    static bool udpStarted = false;
+    if (!udpStarted) {
+      udp.begin(4210);
+      udpStarted = true;
+    }
+    
+    int packetSize = udp.parsePacket();
+    if (packetSize) {
+      char packetBuffer[255];
+      int len = udp.read(packetBuffer, 255);
+      if (len > 0) {
+        packetBuffer[len] = 0;
+        String data = String(packetBuffer);
+        data.trim();
+        if (data.length() > 0) {
+           processCommand(data);
+        }
+      }
+    }
+  }
+}
 
 void setup() {
   Serial.begin(115200);
+  Serial.setTimeout(10);
   loadConfig();
+  
+  setupWiFi();
   
   Wire.begin();
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
@@ -600,6 +633,7 @@ void loop() {
   
   if (currentState == STATE_IDLE || currentState == STATE_ACTION || currentState == STATE_EYES) {
     parseSerialData();
+    loopWiFi();
     
     for(int i = 0; i < 8; i++) {
       if(switches[i].pressed()) {

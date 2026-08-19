@@ -445,26 +445,35 @@ def api_status():
     is_bt = getattr(app, 'bt_connected', False)
     
     if is_usb:
-        return jsonify({"connected": True, "type": "USB", "ping": random.randint(8, 24)})
+        return jsonify({"connected": True, "type": "USB", "ping": random.randint(8, 24), "battery": None})
     elif is_bt:
-        return jsonify({"connected": True, "type": "Bluetooth", "ping": random.randint(30, 85)})
+        return jsonify({"connected": True, "type": "Bluetooth", "ping": random.randint(30, 85), "battery": getattr(app, 'bt_battery', None)})
     else:
-        return jsonify({"connected": False, "type": "None", "ping": 0})
+        return jsonify({"connected": False, "type": "None", "ping": 0, "battery": None})
 
 def check_bt_status_loop():
+    ps_cmd = "$dev = Get-PnpDevice -Class Bluetooth | Where-Object { $_.FriendlyName -match 'MacroDeck' -and $_.Status -eq 'OK' }; if ($dev) { Write-Output 'CONNECTED'; $prop = Get-PnpDeviceProperty -InstanceId $dev.InstanceId -KeyName '{104EA319-6EE2-4701-BD47-8DDBF425BBE5} 2' -ErrorAction SilentlyContinue; if ($prop -and $prop.Data -ne $null) { Write-Output $prop.Data } }"
     while True:
         try:
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             output = subprocess.check_output(
-                ["powershell", "-NoProfile", "-Command", "Get-PnpDevice -Class Bluetooth | Where-Object { $_.FriendlyName -match 'MacroDeck' -and $_.Status -eq 'OK' }"],
+                ["powershell", "-NoProfile", "-Command", ps_cmd],
                 startupinfo=startupinfo,
                 creationflags=0x08000000,
                 text=True
-            )
-            app.bt_connected = "MacroDeck" in output
+            ).strip().split('\n')
+            
+            output = [line.strip() for line in output if line.strip()]
+            
+            app.bt_connected = len(output) > 0 and output[0] == "CONNECTED"
+            if len(output) > 1 and output[1].isdigit():
+                app.bt_battery = int(output[1])
+            else:
+                app.bt_battery = None
         except Exception:
             app.bt_connected = False
+            app.bt_battery = None
         time.sleep(5)
 
 threading.Thread(target=check_bt_status_loop, daemon=True).start()
@@ -609,14 +618,14 @@ def hardware_loop():
             
         data_str = f"C:{int(cpu_temp)},U:{int(cpu_usage)},G:{int(gpu_temp)},V:{int(gpu_usage)}\n"
         
-        if conn_type == "wifi":
-            ip = config.get("app", {}).get("wifi_ip", "")
-            if ip:
-                try:
-                    udp_socket.sendto(data_str.encode('utf-8'), (ip, 4210))
-                except:
-                    pass
-        else:
+        # Zero-Config Wi-Fi Broadcast
+        try:
+            udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            udp_socket.sendto(data_str.encode('utf-8'), ('<broadcast>', 4210))
+        except:
+            pass
+        
+        if conn_type == "usb":
             if serial_port and serial_port.is_open:
                 try:
                     serial_port.write(data_str.encode('utf-8'))

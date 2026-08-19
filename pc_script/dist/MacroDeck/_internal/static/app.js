@@ -670,12 +670,16 @@ setInterval(async () => {
             let ctext = i18n[lang].device_connected;
             
             let iconHtml = '';
+            let batHtml = '';
             if (data.type === 'USB') {
                 iconHtml = '<svg style="margin-left:5px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M10 15v4.5a2.5 2.5 0 0 0 5 0V15"/><rect x="8" y="9" width="8" height="6" rx="1"/></svg>';
             } else if (data.type === 'Bluetooth') {
                 iconHtml = '<svg style="margin-left:5px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6.5 6.5 11 11L12 23V1l5.5 5.5-11 11"/></svg>';
+                if (data.battery !== null && data.battery !== undefined) {
+                    batHtml = `<span style="font-size:12px; color:#aaa; margin-left:8px; vertical-align:middle;">🔋 ${data.battery}%</span>`;
+                }
             }
-            text.innerHTML = ctext + iconHtml;
+            text.innerHTML = ctext + iconHtml + batHtml;
             
             if (pingText) {
                 pingText.style.display = 'inline';
