@@ -302,8 +302,8 @@ function updateButtonLabels() {
     });
 }
 
-function playOledPreview(animMode) {
-    fetch('/api/preview/' + animMode).catch(e => console.error(e));
+function playOledPreview(animMode, localOnly = false) {
+    if (!localOnly) fetch('/api/preview/' + animMode).catch(e => console.error(e));
     
     const idle = document.getElementById('oled-idle');
     const layer = document.getElementById('oled-anim-layer');

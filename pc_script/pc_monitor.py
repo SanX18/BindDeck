@@ -28,6 +28,8 @@ import GPUtil
 import random
 from flask import Flask, render_template, request, jsonify
 
+window_ref = None
+
 # GUI / Icon dependencies
 import win32gui
 import win32ui
@@ -134,6 +136,13 @@ def execute_macro(key_index):
     action = config["keys"].get(str(key_index), {})
     action_type = action.get("type", "none")
     value = action.get("value", "")
+    anim = action.get("anim", -1)
+    
+    try:
+        if int(anim) != -1 and window_ref:
+            window_ref.evaluate_js(f"if(typeof playOledPreview === 'function') playOledPreview({anim}, true);")
+    except Exception as e:
+        print(f"Error anim preview: {e}")
     
     if action_type == "app" and value:
         try:
@@ -664,7 +673,9 @@ def main():
 
     from PIL import Image
     
+    global window_ref
     window = webview.create_window('MacroDeck', app, width=1200, height=950, background_color='#001f3f')
+    window_ref = window
     force_quit = False
     
     def show_window(icon, item):
