@@ -276,6 +276,11 @@ async function fetchConfig() {
             
             if (config.app.theme === 'light') document.body.classList.add('light-theme');
             applyLanguage(config.app.lang || 'en');
+            
+            if (config.app.tutorialSeen === undefined || config.app.tutorialSeen === false) {
+                currentTutorialStep = 0;
+                showTutorialStep(0);
+            }
         }
         
         updateButtonLabels();
@@ -811,7 +816,15 @@ function nextTutorialStep() {
 
 function closeTutorial() {
     document.getElementById('tutorial-modal').style.display = 'none';
-    localStorage.setItem('tutorialSeen', 'true');
+    if (!config.app) config.app = {};
+    config.app.tutorialSeen = true;
+    try {
+        fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+    } catch(e) {}
 }
 
 // Auto-show tutorial on first run
@@ -824,10 +837,7 @@ window.addEventListener('DOMContentLoaded', () => {
         showTutorialStep(0);
     });
 
-    if (!localStorage.getItem('tutorialSeen')) {
-        currentTutorialStep = 0;
-        showTutorialStep(0);
-    }
+
 });
 
 
