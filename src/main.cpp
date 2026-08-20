@@ -217,11 +217,15 @@ void processCommand(String data) {
       if (pipeIdx != -1) {
         String ssid = payload.substring(0, pipeIdx);
         String pwd = payload.substring(pipeIdx + 1);
+        ssid.trim();
+        pwd.trim();
         preferences.begin("macrodeck", false);
         preferences.putString("wifiSSID", ssid);
         preferences.putString("wifiPwd", pwd);
         preferences.end();
-        WiFi.disconnect();
+        WiFi.disconnect(true, true);
+        delay(100);
+        WiFi.mode(WIFI_STA);
         WiFi.begin(ssid.c_str(), pwd.c_str());
       }
     } else if (data.startsWith("CMD:GET_WIFI")) {
@@ -328,7 +332,7 @@ void drawIdle() {
 
   // Si no hemos recibido datos (ni por USB ni por WiFi) en 3 segundos,
   // asumimos que no hay PC conectado o hay problemas de conexion
-  bool isWireless = (millis() - lastDataTime > 3000);
+  bool isDisconnected = (millis() - lastDataTime > 3000);
 
   if (cpu_temp > 85 || gpu_temp > 85) {
     if ((millis() / 500) % 2 == 0) { // Parpadeo cada 500ms
@@ -350,22 +354,24 @@ void drawIdle() {
   display.setTextColor(SSD1306_WHITE);
   
   // Header
-  if (isWireless) {
-    if (WiFi.status() == WL_CONNECTED) {
-      drawWiFiIcon(0, 0);
-    } else {
-      drawBTIcon(0, 0);
-    }
-    display.setCursor(12, 0);
-    display.print("--- PC STATS ---");
+  display.setCursor(28, 0);
+  if (isDisconnected) {
+      display.setCursor(20, 0);
+      display.print("NO SIGNAL");
   } else {
-    display.setCursor(0, 0);
-    display.print("--- PC STATS ---");
+      display.print("PC STATS");
+  }
+  
+  // Connection Icons (Bottom Right)
+  if (WiFi.status() == WL_CONNECTED) {
+    drawWiFiIcon(116, 54);
+  } else {
+    drawBTIcon(120, 54);
   }
   
   int batPct = getBatteryPercentage();
   if (batPct != -1) {
-      drawBatteryIcon(81, 0, batPct);
+      drawBatteryIcon(80, 0, batPct);
       if (bleKeyboard.isConnected()) {
           bleKeyboard.setBatteryLevel(batPct);
       }

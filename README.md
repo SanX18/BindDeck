@@ -26,6 +26,7 @@ Este proyecto es ideal para acompañar carcasas impresas en 3D (disponibles en M
 *   🚀 **8 Botones Totalmente Personalizables:** Asigna atajos de teclado (ej: `CTRL+SHIFT+S`), lanza programas (`calc.exe`, `spotify.exe`), o simplemente escribe bloques de texto completos con un clic.
 *   🎛️ **Potenciómetro Analógico:** Controla el volumen general del sistema operativo, zoom, deshacer/rehacer o pestañas, con un algoritmo de auto-calibración dinámica instantánea.
 *   📺 **Pantalla OLED Interactiva:** Animaciones en tiempo real y **Monitor de Recursos del PC** (Temperaturas y Carga de CPU/GPU en tiempo real).
+*   🚀 **NUEVO - Conectividad Dual Inalámbrica:** Úsalo por cable USB o de forma 100% inalámbrica gracias a su batería integrada. Envía macros al PC mediante **Bluetooth LE** (bajo consumo) y recibe telemetría del PC en tiempo real a través de **Wi-Fi UDP Zero-Config**.
 *   🔄 **Sincronización App-Hardware:** Las animaciones y estados se reflejan a la vez en la pantalla física y en la aplicación de escritorio.
 *   🏷️ **Textos Personalizados:** Define qué texto quieres que aparezca en la pantalla OLED para cada uno de los botones de manera individual.
 *   💻 **Aplicación de Escritorio (Windows):** Una interfaz gráfica limpia, moderna (Modo Claro/Oscuro) y en dos idiomas (Español/Inglés) que se ejecuta en la bandeja del sistema.
