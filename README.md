@@ -5,7 +5,7 @@
   **Un controlador macro programable open-source y personalizable, potenciado por ESP32 y una intuitiva App de PC.**
 
   [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=github)](https://github.com/sponsors/SanX18)
-  [![Buy me a coffe](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=github)](buymeacoffee.com/sanx18)
+  [![Buy me a coffe](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=buymeacoffe)](buymeacoffee.com/sanx18)
   [![PlatformIO](https://img.shields.io/badge/PlatformIO-Compatible-orange?logo=platformio)](https://platformio.org/)
   [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
 </div>
