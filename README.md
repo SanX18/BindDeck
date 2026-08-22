@@ -78,6 +78,7 @@ El uso, modificación y distribución de este código es **completamente gratuit
   Si este proyecto te ha sido útil, te ha inspirado o simplemente quieres invitarme a un café para apoyar el desarrollo continuo y futuros proyectos, puedes hacerlo a través de **GitHub Sponsors** o **BuyMeACoffe**:
 
 👉 **[Apoyar el proyecto en GitHub Sponsors](https://github.com/sponsors/SanX18)**
+
 👉 **[Apoyar el proyecto en ByMeACoffe]( https://www.buymeacoffee.com/sanx18)**
 
 ---
