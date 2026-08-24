@@ -5,6 +5,7 @@
   **Un controlador macro programable open-source y personalizable, potenciado por ESP32 y una intuitiva App de PC.**
 
   [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=github)](https://github.com/sponsors/SanX18)
+  [![Buy me a coffe](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=buymeacoffe)](buymeacoffee.com/sanx18)
   [![PlatformIO](https://img.shields.io/badge/PlatformIO-Compatible-orange?logo=platformio)](https://platformio.org/)
   [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
 </div>
@@ -75,9 +76,11 @@ El sistema ahora es completamente **Plug & Play**. Toda la lógica (servidor web
 
 El uso, modificación y distribución de este código es **completamente gratuito** para la comunidad. Se ha desarrollado invirtiendo mucho tiempo, café y pasión. 
 
-Si este proyecto te ha sido útil, te ha inspirado o simplemente quieres invitarme a un café para apoyar el desarrollo continuo y futuros proyectos, puedes hacerlo a través de **GitHub Sponsors**:
+  Si este proyecto te ha sido útil, te ha inspirado o simplemente quieres invitarme a un café para apoyar el desarrollo continuo y futuros proyectos, puedes hacerlo a través de **GitHub Sponsors** o **BuyMeACoffe**:
 
 👉 **[Apoyar el proyecto en GitHub Sponsors](https://github.com/sponsors/SanX18)**
+
+👉 **[Apoyar el proyecto en ByMeACoffe]( https://www.buymeacoffee.com/sanx18)**
 
 ---
 
