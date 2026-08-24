@@ -1,0 +1,8 @@
+### Novedades y Mejoras en la Batería (OLED)
+
+- **Lectura de Batería Estable:** Se ha implementado un filtro de media móvil (EMA) en el ESP32. Ahora el porcentaje de batería en pantalla es completamente estable y cambia suavemente, eliminando los saltos constantes.
+- **Detección Automática de Carga (TP4056):** El sistema detecta cuándo se enchufa el cargador al módulo TP4056 mediante el análisis de subidas bruscas de voltaje, sin necesidad de cables extra.
+- **Filtro Anti-Ruido USB:** Se ha ajustado la sensibilidad de detección para ignorar el ruido eléctrico generado por la conexión USB al PC, evitando falsos positivos que mostraban 100% intermitentemente.
+- **Visibilidad Inteligente y Rayo de Carga:** Si usas BindDeck conectado al PC, el icono de la batería se ocultará para mantener la pantalla IDLE limpia. Solo aparecerá (junto con un nuevo **icono de un rayo**) de manera exclusiva cuando conectes el cable de corriente al TP4056.
+
+*Nota: Este ejecutable (.exe) incluye internamente el firmware actualizado para flashear el ESP32 directamente.*

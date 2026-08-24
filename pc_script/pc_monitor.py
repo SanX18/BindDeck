@@ -147,6 +147,12 @@ def execute_macro(key_index):
     anim = action.get("anim", -1)
     
     try:
+        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
+            f.write(f"[{time.time()}] execute_macro called for key {key_index}. Type: {action_type}, Value: {value}, Anim: {anim}\n")
+    except:
+        pass
+    
+    try:
         if int(anim) != -1 and window_ref:
             window_ref.evaluate_js(f"if(typeof playOledPreview === 'function') playOledPreview({anim}, true);")
     except Exception as e:
@@ -168,19 +174,21 @@ def execute_macro(key_index):
             time.sleep(0.05)
             for k in reversed(keys): keyboard.release(k)
         except Exception as e:
-            print(f"Error enviando atajo: {e}")
+            with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
+                f.write(f"Error shortcut: {e}\n")
     elif action_type == "text" and value:
         try:
             keyboard.write(value)
         except Exception as e:
-            print(f"Error escribiendo texto: {e}")
+            pass
     elif action_type == "none":
         try:
             keyboard.press(f"f{key_index}")
             time.sleep(0.05)
             keyboard.release(f"f{key_index}")
         except Exception as e:
-            print(f"Error enviando tecla default: {e}")
+            with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
+                f.write(f"Error none: {e}\n")
 
 
 def change_app_volume(app_name, up):
@@ -201,6 +209,9 @@ def change_app_volume(app_name, up):
 
 def on_key_event(e):
     if e.event_type == keyboard.KEY_DOWN:
+        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
+            f.write(f"[{time.time()}] KEYHOOK RECEIVED: {e.name} (scan_code: {e.scan_code})\n")
+        
         if e.name.startswith('f') and e.name[1:].isdigit():
             key_num = int(e.name[1:])
             if key_num == 23 or key_num == 24:
@@ -253,14 +264,14 @@ def api_flash_bundled():
         return jsonify({"success": False, "error": "Bundled firmware not found"})
         
     try:
-        import esptool
-        # Use python import directly to avoid subprocess launching PyInstaller executable again
+        import subprocess
         try:
-            esptool.main(["--port", port_to_flash, "--baud", "460800", "write_flash", "-z", "0x10000", fw_path])
-        except SystemExit as e:
-            # esptool may call sys.exit(), we catch it to prevent app termination
-            if e.code != 0:
-                raise Exception(f"esptool exited with error code {e.code}")
+            result = subprocess.run(
+                ["python", "-m", "esptool", "--port", port_to_flash, "--baud", "460800", "write_flash", "-z", "0x10000", fw_path],
+                capture_output=True, text=True, check=True
+            )
+        except subprocess.CalledProcessError as e:
+            return jsonify({"success": False, "error": f"esptool failed: {e.stderr}"})
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -683,6 +694,8 @@ def serial_read_loop():
                     try:
                         idx = int(line.split(":")[1])
                         key_num = idx + 13
+                        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
+                            f.write(f"[{time.time()}] SERIAL READ BTN: {idx} (key_num={key_num})\n")
                         threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
                     except:
                         pass
@@ -711,6 +724,41 @@ def serial_read_loop():
         except:
             pass
         time.sleep(0.02)
+
+def udp_listen_loop():
+    try:
+        listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        listen_sock.bind(('0.0.0.0', 4211))
+        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
+            f.write(f"[{time.time()}] UDP Listener Started on port 4211\n")
+        while True:
+            data, addr = listen_sock.recvfrom(1024)
+            line = data.decode('utf-8', errors='ignore').strip()
+            if line.startswith("BTN:"):
+                try:
+                    idx = int(line.split(":")[1])
+                    key_num = idx + 13
+                    with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
+                        f.write(f"[{time.time()}] UDP READ BTN: {idx} (key_num={key_num})\n")
+                    threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
+                except:
+                    pass
+            elif line.startswith("ENC:"):
+                cmd = line.split(":")[1]
+                if cmd == "APPVUP" or cmd == "APPVDN":
+                    app_name = config.get("esp32", {}).get("encApp", "")
+                    if app_name:
+                        threading.Thread(target=change_app_volume, args=(app_name, cmd == "APPVUP"), daemon=True).start()
+                elif cmd == "VUP": keyboard.send("volume up")
+                elif cmd == "VDN": keyboard.send("volume down")
+                elif cmd == "ZIN": keyboard.send("ctrl++")
+                elif cmd == "ZOUT": keyboard.send("ctrl+-")
+                elif cmd == "TFWD": keyboard.send("ctrl+tab")
+                elif cmd == "TBCK": keyboard.send("ctrl+shift+tab")
+                elif cmd == "REDO": keyboard.send("ctrl+y")
+                elif cmd == "UNDO": keyboard.send("ctrl+z")
+    except Exception as e:
+        print("UDP Listen Error:", e)
 
 def hardware_loop():
     global serial_port
@@ -816,6 +864,7 @@ def main():
     # Arrancar monitor de hardware en background
     threading.Thread(target=hardware_loop, daemon=True).start()
     threading.Thread(target=serial_read_loop, daemon=True).start()
+    threading.Thread(target=udp_listen_loop, daemon=True).start()
     
     # Enganchar teclas F13-F20
     keyboard.hook(on_key_event, suppress=False)

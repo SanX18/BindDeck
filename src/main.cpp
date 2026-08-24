@@ -147,6 +147,21 @@ void loadConfig() {
 
 // Track last time we received data (Serial or WiFi)
 unsigned long lastDataTime = 0;
+IPAddress pcIP;
+bool pcIpSet = false;
+
+void sendDataToPC(String data) {
+  Serial.println(data);
+  if (WiFi.status() == WL_CONNECTED) {
+     if (pcIpSet) {
+       udp.beginPacket(pcIP, 4211);
+     } else {
+       udp.beginPacket(IPAddress(255, 255, 255, 255), 4211);
+     }
+     udp.print(data);
+     udp.endPacket();
+  }
+}
 
 void processCommand(String data) {
     lastDataTime = millis();
@@ -231,8 +246,11 @@ void processCommand(String data) {
     }
 }
 
+unsigned long lastSerialTime = 0;
+
 void parseSerialData() {
   if (Serial.available()) {
+    lastSerialTime = millis();
     String data = Serial.readStringUntil('\n');
     data.trim();
     if (data.length() > 0) {
@@ -244,7 +262,16 @@ void parseSerialData() {
 // Batery config
 const int BATTERY_PIN = 35; // Pin analogico para medir voltaje
 
+bool isBatteryCharging = false;
+
 int getBatteryPercentage() {
+  static float filteredRaw = -1;
+  static unsigned long lastBatteryUpdate = 0;
+  
+  static float smoothForCharging = -1;
+  static float lastChargingCheckVal = 0;
+  static unsigned long lastChargingCheckTime = 0;
+  
   // Con un divisor de voltaje (100k + 100k), el voltaje en el pin es la mitad de la bateria.
   // Bateria max = 4.2V -> Pin = 2.1V.
   // En el ESP32, 2.1V es aprox 2600-2800 en el ADC de 12 bits (0-4095).
@@ -255,7 +282,35 @@ int getBatteryPercentage() {
   // Una batería agotada (3.0V) seguiría dando > 1800. Así que si es menor a 1000, 
   // sabemos seguro que no hay hardware de medición conectado.
   if (raw < 1000) {
+    filteredRaw = -1;
+    isBatteryCharging = false;
     return -1; // -1 significa "Batería no detectada"
+  }
+  
+  if (filteredRaw == -1) {
+    filteredRaw = raw; // Inicializar en la primera lectura válida
+    smoothForCharging = raw;
+    lastChargingCheckVal = raw;
+  }
+  
+  // EMA rápido para detectar subidas de voltaje bruscas (cargador)
+  smoothForCharging = (0.2 * raw) + (0.8 * smoothForCharging);
+  
+  // Comprobar saltos cada 2 segundos
+  if (millis() - lastChargingCheckTime > 2000) {
+    if (smoothForCharging - lastChargingCheckVal > 60) {
+      isBatteryCharging = true; // Subió el voltaje de golpe -> Cargando
+    } else if (lastChargingCheckVal - smoothForCharging > 60) {
+      isBatteryCharging = false; // Bajó de golpe -> Desconectado
+    }
+    lastChargingCheckVal = smoothForCharging;
+    lastChargingCheckTime = millis();
+  }
+  
+  // Filtro de media móvil exponencial (EMA) para suavizar la lectura
+  if (millis() - lastBatteryUpdate > 50) {
+    filteredRaw = (0.05 * raw) + (0.95 * filteredRaw);
+    lastBatteryUpdate = millis();
   }
   
   // Asumiendo lectura de 0 a 4095. Para 4.2V (100%), leemos aprox 2600. Para 3.3V (0%), leemos aprox 2050.
@@ -263,11 +318,11 @@ int getBatteryPercentage() {
   int minRaw = 2050; // 3.3V
   int maxRaw = 2600; // 4.2V
   
-  int pct = map(raw, minRaw, maxRaw, 0, 100);
+  int pct = map((int)filteredRaw, minRaw, maxRaw, 0, 100);
   return constrain(pct, 0, 100);
 }
 
-void drawBatteryIcon(int x, int y, int percentage) {
+void drawBatteryIcon(int x, int y, int percentage, bool isCharging) {
   // Draw percentage text to the left of the icon
   display.setCursor(x, y + 1);
   display.print(percentage);
@@ -284,6 +339,15 @@ void drawBatteryIcon(int x, int y, int percentage) {
   int fillWidth = map(percentage, 0, 100, 0, 16);
   if (fillWidth > 0) {
     display.fillRect(iconX + 2, y + 2, fillWidth, 6, SSD1306_WHITE);
+  }
+  
+  if (isCharging) {
+    // Dibujar un rayo en el centro. Usamos INVERSE para que se vea blanco sobre fondo negro, o negro sobre la barra de llenado.
+    int lx = iconX + 8;
+    int ly = y + 1;
+    display.drawLine(lx + 3, ly + 1, lx + 1, ly + 4, SSD1306_INVERSE);
+    display.drawLine(lx + 1, ly + 4, lx + 4, ly + 4, SSD1306_INVERSE);
+    display.drawLine(lx + 4, ly + 4, lx + 2, ly + 7, SSD1306_INVERSE);
   }
 }
 
@@ -345,8 +409,15 @@ void drawIdle() {
   }
   
   int batPct = getBatteryPercentage();
+  bool isConnectedByCable = (millis() - lastSerialTime < 3000);
+  
   if (batPct != -1) {
-      drawBatteryIcon(80, 0, batPct);
+      // Mostrar la bateria SIEMPRE que estemos inalambricos (!isConnectedByCable)
+      // O SIEMPRE que este cargando (isBatteryCharging)
+      if (!isConnectedByCable || isBatteryCharging) {
+          drawBatteryIcon(80, 0, batPct, isBatteryCharging);
+      }
+      
       if (bleKeyboard.isConnected()) {
           bleKeyboard.setBatteryLevel(batPct);
       }
@@ -569,14 +640,14 @@ void drawMenu() {
 void handleEncoderAction(bool forward) {
   if (encMode == 0) { // Volume
     if (bleKeyboard.isConnected()) bleKeyboard.write(forward ? KEY_MEDIA_VOLUME_UP : KEY_MEDIA_VOLUME_DOWN);
-    Serial.println(forward ? "ENC:VUP" : "ENC:VDN");
+    sendDataToPC(forward ? "ENC:VUP" : "ENC:VDN");
   } else if (encMode == 1) { // Zoom (Ctrl + / Ctrl -)
     if (bleKeyboard.isConnected()) {
       bleKeyboard.press(KEY_LEFT_CTRL);
       bleKeyboard.write(forward ? '+' : '-');
       bleKeyboard.releaseAll();
     }
-    Serial.println(forward ? "ENC:ZIN" : "ENC:ZOUT");
+    sendDataToPC(forward ? "ENC:ZIN" : "ENC:ZOUT");
   } else if (encMode == 2) { // Browser Tabs
     if (bleKeyboard.isConnected()) {
       bleKeyboard.press(KEY_LEFT_CTRL);
@@ -584,17 +655,17 @@ void handleEncoderAction(bool forward) {
       bleKeyboard.write(KEY_TAB);
       bleKeyboard.releaseAll();
     }
-    Serial.println(forward ? "ENC:TFWD" : "ENC:TBCK");
+    sendDataToPC(forward ? "ENC:TFWD" : "ENC:TBCK");
   } else if (encMode == 3) { // Undo / Redo
     if (bleKeyboard.isConnected()) {
       bleKeyboard.press(KEY_LEFT_CTRL);
       bleKeyboard.write(forward ? 'y' : 'z');
       bleKeyboard.releaseAll();
     }
-    Serial.println(forward ? "ENC:REDO" : "ENC:UNDO");
+    sendDataToPC(forward ? "ENC:REDO" : "ENC:UNDO");
   } else if (encMode == 5) { // App Volume
     if (bleKeyboard.isConnected()) bleKeyboard.write(forward ? KEY_F24 : KEY_F23);
-    Serial.println(forward ? "ENC:APPVUP" : "ENC:APPVDN");
+    sendDataToPC(forward ? "ENC:APPVUP" : "ENC:APPVDN");
   }
 }
 
@@ -619,6 +690,8 @@ void loopWiFi() {
     
     int packetSize = udp.parsePacket();
     if (packetSize) {
+      pcIP = udp.remoteIP();
+      pcIpSet = true;
       char packetBuffer[255];
       int len = udp.read(packetBuffer, 255);
       if (len > 0) {
@@ -701,7 +774,7 @@ void loop() {
           delay(10);
           bleKeyboard.releaseAll();
         }
-        Serial.println("BTN:" + String(i));
+        sendDataToPC("BTN:" + String(i));
         lastActionKeyIndex = i;
         currentState = STATE_ACTION;
         actionStartTime = millis();
@@ -717,7 +790,7 @@ void loop() {
           delay(10);
           bleKeyboard.releaseAll();
         }
-        Serial.println("BTN:8");
+        sendDataToPC("BTN:8");
         lastActionKeyIndex = 8;
         currentState = STATE_ACTION;
         actionStartTime = millis();
