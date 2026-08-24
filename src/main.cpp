@@ -23,30 +23,31 @@ RoboEyes<Adafruit_SSD1306> eyes(display);
 BleKeyboard bleKeyboard("MacroDeck", "Custom", 100);
 Preferences preferences;
 
-// Potentiometer
-const int POT_PIN      = 34;
-const int POT_SAMPLES  = 32;  // Increased for better noise immunity
-const int POT_DEADZONE = 4;   // Reduced deadzone for better sensitivity
+// Encoder
+#define ENCODER_CLK 18
+#define ENCODER_DT 19
+#define ENCODER_SW 5
 
-// Calibrated range — saved to flash, updated automatically
-int potRawMin = 400;   // Defaults: conservative. Updated when pot hits stops.
-int potRawMax = 3700;
+const int8_t enc_states[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
+volatile int encoderSteps = 0;
+volatile uint8_t old_AB = 0;
 
-// Tracking vars (NOT saved — reset every boot, initialized to ADC extremes)
-// Starting at 4095/0 means ANY real reading immediately starts tracking.
-int   potTrackMin     = 32767;
-int   potTrackMax     = 0;
-unsigned long potTrackMinSince = 0;
-unsigned long potTrackMaxSince = 0;
-
-int potLastPercent = -1;
-int potSentVolume  = -1;
-unsigned long lastPotChange = 0;
+void IRAM_ATTR readEncoder() {
+  old_AB <<= 2;
+  uint8_t current = 0;
+  if (digitalRead(ENCODER_CLK)) current |= 0x02;
+  if (digitalRead(ENCODER_DT)) current |= 0x01;
+  old_AB |= (current & 0x03);
+  encoderSteps += enc_states[(old_AB & 0x0f)];
+}
 
 // Pins
 const int SWITCH_PINS[8] = {13, 12, 14, 27, 26, 25, 33, 32};
 const uint8_t MACRO_KEYS[8] = {KEY_F13, KEY_F14, KEY_F15, KEY_F16, KEY_F17, KEY_F18, KEY_F19, KEY_F20};
 Bounce2::Button switches[8];
+Bounce2::Button menuBtn;
+int currentIdleScreen = 0; // 0=Stats, 1=Time, 2=Eyes
+
 
 enum State {
   STATE_IDLE,
@@ -80,10 +81,43 @@ void saveConfig() {
   preferences.putInt("animMode", animMode);
   preferences.putInt("encMode", encMode);
   preferences.putInt("brightness", brightness);
-  preferences.putBytes("keyAnims", keyAnims, sizeof(keyAnims));
-  preferences.putInt("potRawMin", potRawMin);
-  preferences.putInt("potRawMax", potRawMax);
+  for(int i=0; i<8; i++) {
+    char key[10];
+    sprintf(key, "kbanim%d", i);
+    preferences.putInt(key, keyAnims[i]);
+  }
   preferences.end();
+}
+
+
+#include <time.h>
+
+void drawTimeScreen() {
+  display.clearDisplay();
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo, 50)) {
+    display.setCursor(20, 25);
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.print("Waiting for Time...");
+    display.display();
+    return;
+  }
+  
+  char timeStringBuff[50];
+  strftime(timeStringBuff, sizeof(timeStringBuff), "%H:%M", &timeinfo);
+  
+  display.setTextSize(3);
+  display.setTextColor(SSD1306_WHITE);
+  
+  // Center time
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(timeStringBuff, 0, 0, &x1, &y1, &w, &h);
+  display.setCursor((128 - w) / 2, (64 - h) / 2);
+  display.print(timeStringBuff);
+  
+  display.display();
 }
 
 // Forward declarations
@@ -107,68 +141,8 @@ void loadConfig() {
     sprintf(key, "kbtxt%d", i);
     keyTexts[i] = preferences.getString(key, "");
   }
-  potRawMin = preferences.getInt("potRawMin", 400);
-  potRawMax = preferences.getInt("potRawMax", 3700);
-  
-  potTrackMin = 32767;
-  potTrackMax = 0;
+  if (encMode < 0 || encMode > 5) encMode = 0;
   preferences.end();
-}
-
-// Returns averaged raw ADC reading from potentiometer
-int readPotRaw() {
-  long sum = 0;
-  for (int i = 0; i < POT_SAMPLES; i++) {
-    sum += analogRead(POT_PIN);
-    delayMicroseconds(200);
-  }
-  return (int)(sum / POT_SAMPLES);
-}
-
-// Returns potentiometer position as 0-100% using calibrated range
-int readPotPercent(int raw) {
-  int pct = (potRawMax > potRawMin) ? map(raw, potRawMin, potRawMax, 0, 100) : 0;
-  return constrain(pct, 0, 100);
-}
-
-// Auto-calibration: tracks the lowest and highest stable raw values seen.
-// potTrackMin starts at 4095 so the first real reading always updates it.
-// potTrackMax starts at 0 so the first real reading always updates it.
-// Only commits to flash if the new extreme has been held for 700ms (no noise).
-void updatePotCalibration(int raw) {
-  const unsigned long STABLE_MS = 200;  // Reduced to calibrate faster
-  const int           MARGIN    = 25;   // Increased tolerance to capture ends easily
-
-  // ── Track minimum ──
-  if (raw < potTrackMin - MARGIN) {
-    // New lowest value seen: reset the timer
-    potTrackMin     = raw;
-    potTrackMinSince = millis();
-  } else if (raw <= potTrackMin + MARGIN && millis() - potTrackMinSince >= STABLE_MS) {
-    // Stable near the new low for 700ms → accept as calibrated minimum
-    if (potTrackMin < potRawMin) {
-      potRawMin = potTrackMin;
-      saveConfig();
-    }
-  }
-
-  // ── Track maximum ──
-  if (raw > potTrackMax + MARGIN) {
-    // New highest value seen: reset the timer
-    potTrackMax     = raw;
-    potTrackMaxSince = millis();
-  } else if (raw >= potTrackMax - MARGIN && millis() - potTrackMaxSince >= STABLE_MS) {
-    // Stable near the new high for 700ms → accept as calibrated maximum
-    if (potTrackMax > potRawMax) {
-      potRawMax = potTrackMax;
-      saveConfig();
-    }
-  }
-
-  // Serial debug — open Monitor at 115200 to watch calibration learn
-  Serial.print("raw="); Serial.print(raw);
-  Serial.print(" | calib min="); Serial.print(potRawMin);
-  Serial.print(" max="); Serial.println(potRawMax);
 }
 
 // Track last time we received data (Serial or WiFi)
@@ -227,6 +201,7 @@ void processCommand(String data) {
         delay(100);
         WiFi.mode(WIFI_STA);
         WiFi.begin(ssid.c_str(), pwd.c_str());
+  configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org");
       }
     } else if (data.startsWith("CMD:GET_WIFI")) {
       if (WiFi.status() == WL_CONNECTED) {
@@ -609,7 +584,7 @@ void handleEncoderAction(bool forward) {
     bleKeyboard.press(KEY_LEFT_CTRL);
     bleKeyboard.write(forward ? 'y' : 'z');
     bleKeyboard.releaseAll();
-  } else if (encMode == 5) { // App Volume (F21 = left/down, F22 = right/up)
+  } else if (encMode == 5) { // App Volume
     bleKeyboard.write(forward ? KEY_F22 : KEY_F21);
   }
 }
@@ -622,6 +597,7 @@ void setupWiFi() {
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid.c_str(), pwd.c_str());
+  configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org");
 }
 
 void loopWiFi() {
@@ -671,20 +647,39 @@ void setup() {
   
   bleKeyboard.begin();
   
-  // Potentiometer setup
-  analogReadResolution(12);          // 12-bit: 0-4095
-  analogSetAttenuation(ADC_11db);    // Full 0-3.3V range
-  // potLastPercent stays -1 so the loop initializes it on first read
+  // Encoder setup
+  pinMode(ENCODER_CLK, INPUT_PULLUP);
+  pinMode(ENCODER_DT, INPUT_PULLUP);
+  pinMode(ENCODER_SW, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_CLK), readEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_DT), readEncoder, CHANGE);
   
   for(int i = 0; i < 8; i++) {
     switches[i].attach(SWITCH_PINS[i], INPUT_PULLUP);
     switches[i].interval(25);
     switches[i].setPressedState(LOW);
   }
+  
+  menuBtn.attach(4, INPUT_PULLUP);
+  menuBtn.interval(25);
+  menuBtn.setPressedState(LOW);
 }
 
 void loop() {
   for(int i = 0; i < 8; i++) switches[i].update();
+  menuBtn.update();
+  
+  if (menuBtn.pressed()) {
+    currentIdleScreen = (currentIdleScreen + 1) % 3;
+    if (currentIdleScreen == 2) {
+       currentState = STATE_EYES;
+       eyes.setMood(random(0, 4));
+       eyeStateStartTime = millis();
+    } else {
+       currentState = STATE_IDLE;
+    }
+  }
+
   
   if (currentState == STATE_IDLE || currentState == STATE_ACTION || currentState == STATE_EYES) {
     parseSerialData();
@@ -703,67 +698,65 @@ void loop() {
       }
     }
     
-    // --- Dynamic Range Tracking ---
-    // Instantly adapts to your potentiometer's real physical range without deadzones.
-    int raw = readPotRaw();
-    static int pMin = 4095;
-    static int pMax = 0;
-    if (raw < pMin) pMin = raw;
-    if (raw > pMax) pMax = raw;
-    
-    int range = pMax - pMin;
-    if (range < 500) range = 4095; // Default safe range before we discover the real one
-    
-    // We want EXACTLY 55 steps (110% volume) over the entire physical rotation.
-    // This perfectly covers 0-100% in Windows and avoids stopping at 50%.
-    int rawPerStep = range / 55; 
-
-    // Initialize on first read
-    static int potLastRaw = -1;
-    if (potLastRaw == -1) {
-      potLastRaw = raw;
+    // --- Encoder Button (Programmable) ---
+    static unsigned long lastEncoderButtonPress = 0;
+    if (digitalRead(ENCODER_SW) == LOW) {
+      if (millis() - lastEncoderButtonPress > 200) {
+        if (bleKeyboard.isConnected()) {
+          bleKeyboard.press(KEY_F21);
+          delay(10);
+          bleKeyboard.releaseAll();
+        }
+        lastActionKeyIndex = 8;
+        currentState = STATE_ACTION;
+        actionStartTime = millis();
+        lastEncoderButtonPress = millis();
+      }
     }
 
-    // Non-blocking smooth accumulator
-    static unsigned long lastPotSend = 0;
-    int diff = raw - potLastRaw;
-    
-    if (abs(diff) >= rawPerStep) {
-      if (millis() - lastPotSend > 15) {
-        bool forward = diff > 0;
-        
+    // --- Rotary Encoder ---
+    static int lastEncoderSteps = 0;
+    if (encoderSteps / 4 != lastEncoderSteps / 4) {
+      noInterrupts();
+      int currentSteps = encoderSteps;
+      interrupts();
+      
+      int diff = (currentSteps / 4) - (lastEncoderSteps / 4);
+      if (diff > 3) diff = 3;
+      if (diff < -3) diff = -3;
+      
+      for(int i = 0; i < abs(diff); i++) {
+        bool forward = (diff > 0);
         handleEncoderAction(forward);
-        
-        // Advance our tracker by exactly one step (leaving remainder in the accumulator for slow turns)
-        potLastRaw += forward ? rawPerStep : -rawPerStep;
-        lastPotSend = millis();
+        delay(15);
         
         if (encMode == 0) {
-           visualVolume += forward ? 2 : -2;
+           visualVolume += forward ? 4 : -4;
            if (visualVolume < 0) visualVolume = 0;
            if (visualVolume > 100) visualVolume = 100;
         }
-        lastActionKeyIndex = -3;
-        currentState = STATE_ACTION;
-        actionStartTime = millis();
       }
+      
+      lastEncoderSteps = currentSteps;
+      lastActionKeyIndex = -3;
+      currentState = STATE_ACTION;
+      actionStartTime = millis();
     }
     
     if (currentState == STATE_IDLE) {
-      if (millis() - lastEyeTime > 20000) {
-        currentState = STATE_EYES;
-        eyeStateStartTime = millis();
-        eyes.setMood(random(0, 4));
-      } else {
-        drawIdle();
+      if (currentIdleScreen == 0) {
+        drawIdle(); // PC Stats
+      } else if (currentIdleScreen == 1) {
+        drawTimeScreen();
       }
     } else if (currentState == STATE_ACTION) {
       drawAction();
     } else if (currentState == STATE_EYES) {
       eyes.update();
-      if (millis() - eyeStateStartTime > 5000) {
-        currentState = STATE_IDLE;
-        lastEyeTime = millis();
+      // Change mood randomly
+      if (millis() - eyeStateStartTime > 4000) {
+        eyes.setMood(random(0, 4));
+        eyeStateStartTime = millis();
       }
     }
   }

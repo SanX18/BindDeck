@@ -446,7 +446,7 @@ document.querySelectorAll('.keycap').forEach(btn => {
         panel.style.opacity = '1';
         panel.style.pointerEvents = 'auto';
         
-        const swNumber = e.target.innerText.split(' ')[1];
+        const swNumber = e.target.innerText.includes('SW') ? e.target.innerText.split(' ')[1] : 'Encoder';
         const lang = document.getElementById('appLang').value || 'en';
         const prefix = (lang === 'es') ? 'Configuración Switch ' : 'Configuring Switch ';
         document.getElementById('panel-subtitle').innerText = `${prefix}${swNumber} (F${currentKey})`;

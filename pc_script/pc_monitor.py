@@ -62,7 +62,7 @@ else:
 
 serial_port = None
 config = {
-    "keys": {str(i): {"type": "none", "value": "", "anim": -1} for i in range(13, 21)},
+    "keys": {str(i): {"type": "none", "value": "", "anim": -1} for i in range(13, 22)},
     "esp32": {"animMode": 0, "encMode": 0},
     "app": {"theme": "dark", "lang": "en", "startup": False, "closeMode": "ask"}
 }
@@ -302,7 +302,7 @@ def api_config():
                 # Check if key animations changed
                 changed_anims = False
                 kb_anims = []
-                for i in range(13, 21):
+                for i in range(13, 22):
                     key_anim = new_keys.get(str(i), {}).get("anim", -1)
                     old_anim = old_keys.get(str(i), {}).get("anim", -1)
                     if str(key_anim) != str(old_anim): changed_anims = True
@@ -314,7 +314,7 @@ def api_config():
                     time.sleep(0.1)
                 
                 # Check if key texts changed
-                for i in range(13, 21):
+                for i in range(13, 22):
                     disp_text = new_keys.get(str(i), {}).get("dispText", "")
                     old_text = old_keys.get(str(i), {}).get("dispText", "")
                     if str(disp_text) != str(old_text):
