@@ -202,7 +202,7 @@ function applyLanguage(lang) {
 function updatePresets(type) {
     const btnBrowse = document.getElementById('btn-browse');
     if (btnBrowse) {
-        btnBrowse.style.display = (type === 'app') ? 'block' : 'none';
+        btnBrowse.style.display = (type === 'app') ? 'flex' : 'none';
     }
     
     const datalist = document.getElementById('valuePresets');
