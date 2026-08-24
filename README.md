@@ -12,63 +12,73 @@
 
 ---
 
-## 🌟 Sobre el Proyecto
 
-**BindDeck** es un ecosistema completo (Hardware + Software) diseñado para la comunidad Maker. Convierte un simple microcontrolador ESP32 en un potente teclado de macros personalizado con una pantalla OLED interactiva.
+**BindDeck** es un ecosistema completo de hardware y software diseñado para potenciar tu productividad y tu setup. Convierte un simple microcontrolador ESP32 en un potente teclado de macros personalizado, equipado con una pantalla OLED interactiva, un control analógico y botones mecánicos. Es el accesorio ideal para streamers, programadores, editores de vídeo y cualquier entusiasta de la tecnología.
 
-Ya seas streamer, programador, editor de vídeo o simplemente busques atajos rápidos para tu día a día, BindDeck te permite lanzar aplicaciones, ejecutar atajos complejos y controlar el volumen de tu equipo, todo mientras visualizas divertidas y elegantes animaciones en su pantalla.
+## 🚀 ¿Qué hace la aplicación?
 
-Este proyecto es ideal para acompañar carcasas impresas en 3D (disponibles en MakerWorld) y crear tu propio teclado auxiliar por una fracción del coste de opciones comerciales.
+BindDeck no es solo un teclado de atajos; es una herramienta interactiva. Todo lo que ves en la pantalla de tu PC se sincroniza al instante con tu dispositivo físico:
 
----
-
-## ✨ Características Principales
-
-*   🚀 **8 Botones Totalmente Personalizables:** Asigna atajos de teclado (ej: `CTRL+SHIFT+S`), lanza programas (`calc.exe`, `spotify.exe`), o simplemente escribe bloques de texto completos con un clic.
-*   🎛️ **Potenciómetro Analógico:** Controla el volumen general del sistema operativo, zoom, deshacer/rehacer o pestañas, con un algoritmo de auto-calibración dinámica instantánea.
-*   📺 **Pantalla OLED Interactiva:** Animaciones en tiempo real y **Monitor de Recursos del PC** (Temperaturas y Carga de CPU/GPU en tiempo real).
-*   🚀 **NUEVO - Conectividad Dual Inalámbrica:** Úsalo por cable USB o de forma 100% inalámbrica gracias a su batería integrada. Envía macros al PC mediante **Bluetooth LE** (bajo consumo) y recibe telemetría del PC en tiempo real a través de **Wi-Fi UDP Zero-Config**.
-*   🔄 **Sincronización App-Hardware:** Las animaciones y estados se reflejan a la vez en la pantalla física y en la aplicación de escritorio.
-*   🏷️ **Textos Personalizados:** Define qué texto quieres que aparezca en la pantalla OLED para cada uno de los botones de manera individual.
-*   💻 **Aplicación de Escritorio (Windows):** Una interfaz gráfica limpia, moderna (Modo Claro/Oscuro) y en dos idiomas (Español/Inglés) que se ejecuta en la bandeja del sistema.
-*   🔄 **Actualizaciones OTA:** Actualiza el firmware de tu ESP32 cómodamente por USB con un solo clic desde la propia aplicación.
+*   **Lanzador y Atajos (8 Botones):** Asigna combinaciones complejas de teclado (ej. `CTRL+SHIFT+S`), lanza tus programas favoritos (`calc.exe`, `spotify.exe`) o ejecuta bloques enteros de texto con una sola pulsación.
+*   **Control Analógico Inteligente:** Incorpora un potenciómetro con un algoritmo de auto-calibración dinámica. Úsalo para ajustar el volumen general de tu sistema operativo, hacer zoom, navegar por pestañas o usar el deshacer/rehacer.
+*   **Monitor de Hardware en Tiempo Real:** Su pantalla OLED no solo muestra simpáticas animaciones cuando pulsas los botones; cuando está en reposo actúa como un monitor de telemetría, mostrando las temperaturas y la carga (uso) de tu CPU y GPU en tiempo real.
+*   **Textos Personalizables:** A través de la app, puedes escribir qué texto quieres que aparezca en la pantalla OLED de manera individual para cada uno de los 8 botones.
+*   **Conectividad Dual Híbrida (Cable o Inalámbrico):** Puedes usarlo clásicamente por cable USB, o de manera **100% Inalámbrica**. Envía tus macros al PC usando **Bluetooth LE** (para un bajo consumo de batería) y recibe los datos de las temperaturas del PC vía **Wi-Fi UDP Zero-Config**.
+*   **Software de PC Integrado (Plug & Play):** Cuenta con una moderna aplicación de escritorio para Windows (con Modo Claro/Oscuro y bilingüe Español/Inglés). Desde ella configuras todo visualmente y puedes hasta actualizar el firmware de tu ESP32 vía OTA (Over-The-Air) con un solo clic.
 
 ---
 
-## 🛠️ Hardware Necesario
+## 🛠️ Hardware Utilizado (BOM)
 
-Para construir tu propio BindDeck necesitarás:
+Para montar la electrónica de esta carcasa, necesitarás componentes muy económicos y accesibles.
 
-1.  **Microcontrolador ESP32** (Preferiblemente ESP32-WROOM-32 Dev Kit)
-2.  **Pantalla OLED 0.96"** I2C (128x64, SSD1306)
-3.  **8x Pulsadores Mecánicos** (Cualquier switch tipo Cherry MX o similar)
-4.  **1x Potenciómetro Analógico** (Recomendado Lineal de 10k)
-5.  **Cables Dupont** o PCB personalizada.
-6.  **Carcasa impresa en 3D** (Encuentra mis diseños en [MakerWorld](https://makerworld.com/es/@SanX18))
-
-### Esquema de Conexiones Básico
-*   **OLED:** SDA -> GPIO 21 | SCL -> GPIO 22
-*   **Potenciómetro:** Pin central (Señal) -> GPIO 34 | Extremos -> 3.3V y GND
-*   **Botones (SW1 a SW8):** Pines 13, 12, 14, 27, 26, 25, 33, 32 (Conectados a GND, usando `INPUT_PULLUP` interno).
+1.  **Microcontrolador:** ESP32 (Se recomienda el modelo clásico ESP32-WROOM-32 Dev Kit).
+2.  **Pantalla:** Pantalla OLED de 0.96" I2C (Resolución 128x64, con controlador SSD1306).
+3.  **Switches / Botones:** 8x Switches Mecánicos. *(En este proyecto se han utilizado switches **Outemu Red**. Al ser lineales y silenciosos, ofrecen un tacto suave, rápido y perfecto para ejecutar macros sin el clásico "clic" ruidoso).*
+4.  **Control Analógico:** 1x Potenciómetro Lineal B10K (10 kOhmios).
+5.  **Cableado:** Cables Dupont para realizar las conexiones interiores (o una PCB si decides fabricarla).
+6.  **Extras:** Keycaps (teclas) de tu elección para decorar los switches mecánicos.
 
 ---
 
-## 💻 Instalación y Uso
+## 🔌 Diagrama de Conexiones Físicas
 
-El proyecto consta de dos partes: el **Firmware** (lo que va en la placa) y el **Software** (la app para tu PC).
+El cableado es directo y sencillo. No necesitas instalar resistencias adicionales para los botones, ya que el código se encarga de activar las resistencias internas (`INPUT_PULLUP`) del ESP32.
 
-### 1. Firmware (ESP32)
-1. Clona este repositorio y ábrelo usando **VSCode + PlatformIO**.
-2. Conecta tu ESP32 por USB.
-3. Compila y sube el código usando PlatformIO (`Upload`). Las librerías necesarias (`BleKeyboard`, `Adafruit GFX`, etc.) se descargarán automáticamente.
+### 📺 Pantalla OLED (Comunicación I2C)
+*   **VCC:** Conectar a **3.3V** del ESP32.
+*   **GND:** Conectar a **GND** del ESP32.
+*   **SDA (Línea de Datos):** Conectar al **GPIO 21**.
+*   **SCL (Línea de Reloj):** Conectar al **GPIO 22**.
 
-### 2. Software (PC App) - ¡Plug & Play!
-El sistema ahora es completamente **Plug & Play**. Toda la lógica (servidor web, dependencias, animaciones y monitoreo) viene empaquetada e integrada en la propia aplicación (`BindDeck.exe`), por lo que ya no necesitas instalar Python ni dependencias.
+### 🎛️ Potenciómetro Analógico
+*   **Pin Izquierdo:** Conectar a **3.3V** del ESP32.
+*   **Pin Central (Señal):** Conectar al **GPIO 34**.
+*   **Pin Derecho:** Conectar a **GND** del ESP32.
 
-1. Conecta tu BindDeck por USB.
-2. Ejecuta la aplicación de escritorio (`BindDeck.exe`). 
-3. **⚠️ Importante:** Al iniciarse, la aplicación lanzará automáticamente el programa *LibreHardwareMonitor* en segundo plano para leer las temperaturas de tu procesador y gráfica. Windows te pedirá **permisos de Administrador**; debes aceptarlos para que la telemetría se envíe correctamente a la pantalla.
-4. Configura tus macros visualmente, ajusta las animaciones y la pantalla, ¡y disfruta de tu nuevo ecosistema integrado!
+### ⌨️ Switches Mecánicos (Outemu Red)
+Cada switch mecánico tiene dos patillas. Una patilla de **todos los switches debe ir conectada a GND (Tierra)**. La patilla restante de cada switch se conecta a los siguientes pines del ESP32:
+*   **Switch 1:** GPIO 13
+*   **Switch 2:** GPIO 12
+*   **Switch 3:** GPIO 14
+*   **Switch 4:** GPIO 27
+*   **Switch 5:** GPIO 26
+*   **Switch 6:** GPIO 25
+*   **Switch 7:** GPIO 33
+*   **Switch 8:** GPIO 32
+
+*(💡 Consejo: Puedes puentear o "cadenerar" con un mismo cable todas las patillas GND de los 8 switches y el potenciómetro para llevar un único cable al pin GND del ESP32).*
+
+---
+
+## 💻 Instrucciones Rápidas de Software
+
+El proyecto se divide en el **Firmware** (lo que va en el ESP32) y la **App de PC**.
+
+1.  Carga el código fuente en tu ESP32 (compatible con PlatformIO / VSCode). Toda la información está disponible en el repositorio de GitHub de *SanX18/BindDeck*.
+2.  Abre la aplicación de escritorio `BindDeck.exe` en tu ordenador.
+3.  **⚠️ Importante:** La primera vez que abras la App, te pedirá permisos de Administrador en Windows. **Debes aceptarlos**. Esto es obligatorio para que el motor integrado de hardware (*LibreHardwareMonitor*) tenga acceso de lectura a los sensores de temperatura de tu CPU y Gráfica para enviarlos a la pequeña pantalla OLED.
+4.  Todo el tráfico es 100% privado y local. ¡Configura tus botones, personaliza tu experiencia y disfruta de tu propio macro pad inteligente!
 
 ---
 

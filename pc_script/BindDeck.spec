@@ -1,15 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_data_files
-
-datas = [('templates', 'templates'), ('static', 'static'), ('LibreHardwareMonitor', 'LibreHardwareMonitor'), ('firmware.bin', '.')]
-datas += collect_data_files('esptool')
 
 
 a = Analysis(
     ['pc_monitor.py'],
     pathex=[],
     binaries=[],
-    datas=datas,
+    datas=[('templates', 'templates'), ('static', 'static'), ('LibreHardwareMonitor', 'LibreHardwareMonitor')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
