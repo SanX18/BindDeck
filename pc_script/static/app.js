@@ -270,8 +270,10 @@ async function fetchConfig() {
             const verRes = await fetch('/api/version');
             const verData = await verRes.json();
             const ver = verData.version;
-            i18n.en.about_desc1 = i18n.en.about_desc1.replace("1.0.0", ver);
-            i18n.es.about_desc1 = i18n.es.about_desc1.replace("1.0.0", ver);
+            i18n.en.about_desc1 = i18n.en.about_desc1.replace(/1\.0\.0/g, ver);
+            i18n.es.about_desc1 = i18n.es.about_desc1.replace(/1\.0\.0/g, ver);
+            const elVer = document.getElementById('current-version-text');
+            if (elVer) elVer.innerText = ver;
         } catch(e) {}
         
         if (config.app) {

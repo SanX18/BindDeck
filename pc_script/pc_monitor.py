@@ -639,8 +639,9 @@ def api_do_update():
             
     try:
         urllib.request.urlretrieve(NEW_VERSION_URL, "firmware_update.bin")
-        cmd = [sys.executable, "-m", "esptool", "--port", port_to_flash, "--baud", "460800", "write_flash", "-z", "0x10000", "firmware_update.bin"]
-        subprocess.run(cmd, check=True)
+        import esptool
+        cmd = ["--port", port_to_flash, "--baud", "460800", "write_flash", "-z", "0x10000", "firmware_update.bin"]
+        esptool.main(cmd)
         if os.path.exists("firmware_update.bin"):
             os.remove("firmware_update.bin")
         return jsonify({"success": True})
