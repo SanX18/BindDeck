@@ -1,6 +1,6 @@
 <div align="center">
   
-  # Macro Deck Companion for ESP32
+  # BindDeck Companion for ESP32
   
   **Un controlador macro programable open-source y personalizable, potenciado por ESP32 y una intuitiva App de PC.**
 
@@ -14,9 +14,9 @@
 
 ## 🌟 Sobre el Proyecto
 
-**Macro Deck** es un ecosistema completo (Hardware + Software) diseñado para la comunidad Maker. Convierte un simple microcontrolador ESP32 en un potente teclado de macros personalizado con una pantalla OLED interactiva.
+**BindDeck** es un ecosistema completo (Hardware + Software) diseñado para la comunidad Maker. Convierte un simple microcontrolador ESP32 en un potente teclado de macros personalizado con una pantalla OLED interactiva.
 
-Ya seas streamer, programador, editor de vídeo o simplemente busques atajos rápidos para tu día a día, Macro Deck te permite lanzar aplicaciones, ejecutar atajos complejos y controlar el volumen de tu equipo, todo mientras visualizas divertidas y elegantes animaciones en su pantalla.
+Ya seas streamer, programador, editor de vídeo o simplemente busques atajos rápidos para tu día a día, BindDeck te permite lanzar aplicaciones, ejecutar atajos complejos y controlar el volumen de tu equipo, todo mientras visualizas divertidas y elegantes animaciones en su pantalla.
 
 Este proyecto es ideal para acompañar carcasas impresas en 3D (disponibles en MakerWorld) y crear tu propio teclado auxiliar por una fracción del coste de opciones comerciales.
 
@@ -37,7 +37,7 @@ Este proyecto es ideal para acompañar carcasas impresas en 3D (disponibles en M
 
 ## 🛠️ Hardware Necesario
 
-Para construir tu propio Macro Deck necesitarás:
+Para construir tu propio BindDeck necesitarás:
 
 1.  **Microcontrolador ESP32** (Preferiblemente ESP32-WROOM-32 Dev Kit)
 2.  **Pantalla OLED 0.96"** I2C (128x64, SSD1306)
@@ -63,10 +63,10 @@ El proyecto consta de dos partes: el **Firmware** (lo que va en la placa) y el *
 3. Compila y sube el código usando PlatformIO (`Upload`). Las librerías necesarias (`BleKeyboard`, `Adafruit GFX`, etc.) se descargarán automáticamente.
 
 ### 2. Software (PC App) - ¡Plug & Play!
-El sistema ahora es completamente **Plug & Play**. Toda la lógica (servidor web, dependencias, animaciones y monitoreo) viene empaquetada e integrada en la propia aplicación (`MacroDeck.exe`), por lo que ya no necesitas instalar Python ni dependencias.
+El sistema ahora es completamente **Plug & Play**. Toda la lógica (servidor web, dependencias, animaciones y monitoreo) viene empaquetada e integrada en la propia aplicación (`BindDeck.exe`), por lo que ya no necesitas instalar Python ni dependencias.
 
-1. Conecta tu MacroDeck por USB.
-2. Ejecuta la aplicación de escritorio (`MacroDeck.exe`). 
+1. Conecta tu BindDeck por USB.
+2. Ejecuta la aplicación de escritorio (`BindDeck.exe`). 
 3. **⚠️ Importante:** Al iniciarse, la aplicación lanzará automáticamente el programa *LibreHardwareMonitor* en segundo plano para leer las temperaturas de tu procesador y gráfica. Windows te pedirá **permisos de Administrador**; debes aceptarlos para que la telemetría se envíe correctamente a la pantalla.
 4. Configura tus macros visualmente, ajusta las animaciones y la pantalla, ¡y disfruta de tu nuevo ecosistema integrado!
 

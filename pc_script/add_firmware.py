@@ -55,7 +55,7 @@ def api_flash():
     import urllib.request
     try:
         # Link fake
-        fake_url = "https://raw.githubusercontent.com/SanX18/Projectos-ESP32/master/README.md"
+        fake_url = "https://raw.githubusercontent.com/SanX18/BindDeck/master/README.md"
         urllib.request.urlretrieve(fake_url, "firmware.bin")
         # In a real scenario we would call esptool here:
         # subprocess.run([sys.executable, "-m", "esptool", "write_flash", "0x10000", "firmware.bin"], check=True)

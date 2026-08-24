@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Macro Deck Control</title>
+    <title>BindDeck</title>
     <link rel="stylesheet" href="/static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -12,8 +12,8 @@
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="/static/logo.png" alt="Logo" style="width: 48px; height: 48px; border-radius: 8px;">
             <div>
-                <h1 data-i18n="app_title">Macro Deck</h1>
-                <p data-i18n="app_subtitle">Programmable Macro Controller</p>
+                <h1 data-i18n="app_title">BindDeck</h1>
+                <p data-i18n="app_subtitle">Control Center</p>
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 15px;">
@@ -171,7 +171,7 @@
         <div class="panel center-panel" id="panel-center" style="position: relative;">
             <div class="drag-handle" style="position: absolute; top: 15px; right: 15px; cursor: grab; color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; user-select: none;">&#8942;&#8942;</div>
             <div style="position: absolute; top: 1.5rem; left: 1.5rem;">
-                <h2 class="panel-title" style="margin: 0;" data-i18n="control_deck">Macro Deck</h2>
+                <h2 class="panel-title" style="margin: 0;" data-i18n="control_deck">BindDeck</h2>
                 <p class="panel-subtitle" data-i18n="select_key_hint">Select a key to configure its action.</p>
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: -10px;" data-i18n="sw_legend">(SW = Switch)</p>
             </div>
@@ -182,7 +182,7 @@
                 <div class="device-top">
                     <div class="oled-mock">
                         <div class="oled-text" id="oled-idle" style="text-align: center; font-size: 10px; line-height: 1.4;">
-                            <span style="font-weight: bold; font-size: 12px; color: #22c55e;">MACRO DECK</span><br>
+                            <span style="font-weight: bold; font-size: 12px; color: #22c55e;">BINDDECK</span><br>
                             <span style="color: #a1a1aa;">STATUS: ONLINE</span><br>
                             <span style="color: #60a5fa;">PROFILES LOADED</span>
                         </div>
@@ -347,7 +347,7 @@
     <!-- Close Confirmation Modal -->
     <div class="modal-overlay" id="close-modal" style="display: none; z-index: 10000;">
         <div class="modal-content panel" style="max-width: 400px; text-align: center;">
-            <h2 class="panel-title" data-i18n="close_title">Close Macro Deck?</h2>
+            <h2 class="panel-title" data-i18n="close_title">Close BindDeck?</h2>
             <p style="margin-bottom: 2rem; color: var(--text-muted);" data-i18n="close_desc">Do you want to minimize the application to the system tray so your macros keep working, or quit entirely?</p>
             
             <div class="form-group" style="flex-direction: row; align-items: center; justify-content: center; gap: 10px; margin-bottom: 1.5rem;">
@@ -379,7 +379,7 @@
     <!-- Tutorial Modal -->
     <div id="tutorial-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a MacroDeck!</h2>
+            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a BindDeck!</h2>
             <p id="tut-text" style="color: var(--text-muted); margin-bottom: 20px; min-height: 60px;">
                 Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo.
             </p>

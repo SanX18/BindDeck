@@ -7,7 +7,7 @@ tutorial_html = '''
     <!-- Tutorial Modal -->
     <div id="tutorial-modal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a MacroDeck!</h2>
+            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a BindDeck!</h2>
             <p id="tut-text" style="color: var(--text-muted); margin-bottom: 20px; min-height: 60px;">
                 Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo.
             </p>

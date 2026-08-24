@@ -1,4 +1,4 @@
-ï»¿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import codecs
 
 html = codecs.open('templates/index.html', 'r', 'utf-8').read()
@@ -23,9 +23,9 @@ tutorial_html = '''
     <!-- Tutorial Modal -->
     <div id="tutorial-modal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h2 id="tut-title" style="margin-bottom: 15px;">Â¡Bienvenido a MacroDeck!</h2>
+            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a BindDeck!</h2>
             <p id="tut-text" style="color: var(--text-muted); margin-bottom: 20px; min-height: 60px;">
-                Vamos a darte un rÃ¡pido paseo para que descubras todo lo que puedes hacer con tu dispositivo.
+                Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo.
             </p>
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span id="tut-progress" style="font-size: 12px; color: var(--text-muted);">1 / 4</span>

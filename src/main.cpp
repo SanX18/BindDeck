@@ -20,7 +20,7 @@ WiFiUDP udp;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RoboEyes<Adafruit_SSD1306> eyes(display);
-BleKeyboard bleKeyboard("MacroDeck", "Custom", 100);
+BleKeyboard bleKeyboard("BindDeck", "Custom", 100);
 Preferences preferences;
 
 // Encoder
@@ -77,7 +77,7 @@ String keyTexts[8] = {"", "", "", "", "", "", "", ""};
 int previewAnimOverride = -1;
 
 void saveConfig() {
-  preferences.begin("macrodeck", false);
+  preferences.begin("binddeck", false);
   preferences.putInt("animMode", animMode);
   preferences.putInt("encMode", encMode);
   preferences.putInt("brightness", brightness);
@@ -129,7 +129,7 @@ void drawMicIcon(int x, int y, uint16_t color, uint16_t bg);
 void handleEncoderAction(bool forward);
 
 void loadConfig() {
-  preferences.begin("macrodeck", true);
+  preferences.begin("binddeck", true);
   animMode = preferences.getInt("animMode", 0);
   encMode = preferences.getInt("encMode", 0);
   brightness = preferences.getInt("brightness", 255);
@@ -181,7 +181,7 @@ void processCommand(String data) {
         keyTexts[idx] = txt;
         char pk[10];
         sprintf(pk, "kbtxt%d", idx);
-        preferences.begin("macrodeck", false);
+        preferences.begin("binddeck", false);
         preferences.putString(pk, txt);
         preferences.end();
       }
@@ -193,7 +193,7 @@ void processCommand(String data) {
         String pwd = payload.substring(pipeIdx + 1);
         ssid.trim();
         pwd.trim();
-        preferences.begin("macrodeck", false);
+        preferences.begin("binddeck", false);
         preferences.putString("wifiSSID", ssid);
         preferences.putString("wifiPwd", pwd);
         preferences.end();
@@ -205,7 +205,7 @@ void processCommand(String data) {
       }
     } else if (data.startsWith("CMD:GET_WIFI")) {
       if (WiFi.status() == WL_CONNECTED) {
-        preferences.begin("macrodeck", true);
+        preferences.begin("binddeck", true);
         String ssid = preferences.getString("wifiSSID", WIFI_SSID);
         preferences.end();
         Serial.print("WIFI_INFO:");
@@ -590,7 +590,7 @@ void handleEncoderAction(bool forward) {
 }
 
 void setupWiFi() {
-  preferences.begin("macrodeck", true);
+  preferences.begin("binddeck", true);
   String ssid = preferences.getString("wifiSSID", WIFI_SSID);
   String pwd = preferences.getString("wifiPwd", WIFI_PASSWORD);
   preferences.end();

@@ -72,8 +72,8 @@ UPDATE_AVAILABLE = False
 NEW_VERSION_URL = ""
 NEW_VERSION_NAME = ""
 
-# TODO: EL USUARIO DEBE CAMBIAR ESTO POR SU REPO REAL (Ej. "SanX18/MacroDeck")
-GITHUB_REPO = "SanX18/MacroDeck"
+# TODO: EL USUARIO DEBE CAMBIAR ESTO POR SU REPO REAL (Ej. "SanX18/BindDeck")
+GITHUB_REPO = "SanX18/BindDeck"
 CURRENT_VERSION = "v1.0.0"
 
 def check_for_updates():
@@ -111,7 +111,7 @@ def load_config():
 
 def manage_startup(enable):
     try:
-        startup_path = os.path.join(os.environ["APPDATA"], r"Microsoft\Windows\Start Menu\Programs\Startup", "MacroDeck.bat")
+        startup_path = os.path.join(os.environ["APPDATA"], r"Microsoft\Windows\Start Menu\Programs\Startup", "BindDeck.bat")
         if enable:
             exe_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__)
             cmd = f'start "" "{exe_path}"' if getattr(sys, 'frozen', False) else f'start "" pythonw "{exe_path}"'
@@ -481,7 +481,7 @@ def api_status():
         return jsonify({"connected": False, "type": "None", "ping": 0, "battery": None})
 
 def check_bt_status_loop():
-    ps_cmd = "$dev = Get-PnpDevice -Class Bluetooth | Where-Object { $_.FriendlyName -match 'MacroDeck' -and $_.Status -eq 'OK' }; if ($dev) { Write-Output 'CONNECTED'; $prop = Get-PnpDeviceProperty -InstanceId $dev.InstanceId -KeyName '{104EA319-6EE2-4701-BD47-8DDBF425BBE5} 2' -ErrorAction SilentlyContinue; if ($prop -and $prop.Data -ne $null) { Write-Output $prop.Data } }"
+    ps_cmd = "$dev = Get-PnpDevice -Class Bluetooth | Where-Object { $_.FriendlyName -match 'BindDeck' -and $_.Status -eq 'OK' }; if ($dev) { Write-Output 'CONNECTED'; $prop = Get-PnpDeviceProperty -InstanceId $dev.InstanceId -KeyName '{104EA319-6EE2-4701-BD47-8DDBF425BBE5} 2' -ErrorAction SilentlyContinue; if ($prop -and $prop.Data -ne $null) { Write-Output $prop.Data } }"
     while True:
         try:
             startupinfo = subprocess.STARTUPINFO()
@@ -745,7 +745,7 @@ def main():
     from PIL import Image
     
     global window_ref
-    window = webview.create_window('MacroDeck', app, width=1200, height=950, background_color='#001f3f')
+    window = webview.create_window('BindDeck', app, width=1200, height=950, background_color='#001f3f')
     window_ref = window
     force_quit = False
     
@@ -767,7 +767,7 @@ def main():
                 pystray.MenuItem("Open", show_window, default=True),
                 pystray.MenuItem("Quit", quit_app)
             )
-            icon = pystray.Icon("MacroDeck", image, "Macro Deck", menu)
+            icon = pystray.Icon("BindDeck", image, "BindDeck", menu)
             icon.run()
         except Exception as e:
             print("Tray error:", e)

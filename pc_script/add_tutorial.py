@@ -7,7 +7,7 @@ tutorial_js = '''
 // TUTORIAL LOGIC
 const tutorialSteps = [
     {
-        title: "¡Bienvenido a MacroDeck!",
+        title: "¡Bienvenido a BindDeck!",
         text: "Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo."
     },
     {

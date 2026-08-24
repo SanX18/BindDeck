@@ -1,11 +1,11 @@
-# Manual de Usuario: MacroDeck ESP32
+# Manual de Usuario: BindDeck ESP32
 
-Bienvenido al manual de usuario de **MacroDeck**, tu teclado macro personalizado potenciado por un ESP32. Este manual detalla todas las características de tu dispositivo y cómo sacarle el máximo partido utilizando la aplicación de escritorio.
+Bienvenido al manual de usuario de **BindDeck**, tu teclado macro personalizado potenciado por un ESP32. Este manual detalla todas las características de tu dispositivo y cómo sacarle el máximo partido utilizando la aplicación de escritorio.
 
 ---
 
 ## 1. Características Principales del Dispositivo
-Tu dispositivo MacroDeck no es solo un teclado de macros, es un asistente de escritorio interactivo.
+Tu dispositivo BindDeck no es solo un teclado de macros, es un asistente de escritorio interactivo.
 * **8 Teclas Mecánicas (SW1 - SW8):** Totalmente personalizables para abrir programas, enviar atajos, escribir textos o controlar multimedia.
 * **Potenciómetro Inteligente:** Rueda multifunción con auto-calibración dinámica para controlar el volumen del sistema, zoom, cambio de pestañas o deshacer/rehacer.
 * **Pantalla OLED Integrada:** Muestra animaciones personalizadas al pulsar cada tecla, estadísticas de rendimiento de tu PC (CPU y GPU) y un modo reposo interactivo.
@@ -16,9 +16,9 @@ Tu dispositivo MacroDeck no es solo un teclado de macros, es un asistente de esc
 ## 2. Configuración Inicial (Primeros Pasos)
 
 1. **Instalación del Firmware:** Antes de usar la aplicación, asegúrate de haber cargado el código en el ESP32 (mediante PlatformIO o instalando el `firmware.bin` incluido).
-2. **Conexión USB:** Conecta el MacroDeck al puerto USB de tu PC. Esto alimentará el dispositivo y establecerá la conexión Serial necesaria para la telemetría.
+2. **Conexión USB:** Conecta el BindDeck al puerto USB de tu PC. Esto alimentará el dispositivo y establecerá la conexión Serial necesaria para la telemetría.
 3. **Sincronización Bluetooth:** Empareja el ESP32 en la configuración de Bluetooth de tu ordenador. Aparecerá como un teclado Bluetooth.
-4. **Abrir MacroDeck App:** Inicia el ejecutable en tu ordenador. La aplicación detectará automáticamente el puerto USB (COM) al que está conectado el dispositivo. Si el indicador de conexión (arriba a la derecha) está en verde, ¡estás listo!
+4. **Abrir BindDeck App:** Inicia el ejecutable en tu ordenador. La aplicación detectará automáticamente el puerto USB (COM) al que está conectado el dispositivo. Si el indicador de conexión (arriba a la derecha) está en verde, ¡estás listo!
 
 ---
 
@@ -53,7 +53,7 @@ El mando analógico es tu mejor aliado. En el panel lateral derecho puedes selec
 
 ## 4. Telemetría y Monitor de Recursos (PC Monitor)
 Mientras la aplicación de escritorio esté abierta o minimizada en la bandeja del sistema (System Tray), estará leyendo en segundo plano el estado de tu ordenador utilizando *LibreHardwareMonitor*. 
-En la pantalla de reposo de tu MacroDeck podrás ver en tiempo real:
+En la pantalla de reposo de tu BindDeck podrás ver en tiempo real:
 * **Temperatura de la CPU y GPU** (en ºC).
 * **Carga/Uso de la CPU y GPU** (en %).
 
@@ -66,8 +66,8 @@ Si alguna de las temperaturas supera los 85ºC, la pantalla del dispositivo te m
 * **El indicador está rojo y pone "Desconectado":** Asegúrate de que el cable USB soporta transmisión de datos y no solo carga. Cierra otros programas que puedan estar ocupando el puerto COM (como el monitor serie de Arduino o VSCode).
 * **Pulso un botón y no hace nada en Windows:** Comprueba que el dispositivo esté correctamente emparejado por Bluetooth. El cable USB envía los ajustes, pero las teclas reales se envían por Bluetooth (actúa como un teclado inalámbrico).
 * **La rueda del volumen va extraña al arrancar:** Simplemente gira la rueda una vez de un extremo al otro. El chip aprenderá sus límites físicos instantáneamente y volverá a ser 100% preciso.
-* **El programa no lee las temperaturas:** Asegúrate de ejecutar la aplicación MacroDeck como **Administrador**, ya que Windows requiere permisos elevados para que *LibreHardwareMonitor* lea los sensores de la placa base y la gráfica.
+* **El programa no lee las temperaturas:** Asegúrate de ejecutar la aplicación BindDeck como **Administrador**, ya que Windows requiere permisos elevados para que *LibreHardwareMonitor* lea los sensores de la placa base y la gráfica.
 
 ---
 
-¡Disfruta de tu MacroDeck! Si el proyecto te resulta útil, puedes apoyar al creador [invitándole a un café a través de GitHub Sponsors](https://github.com/sponsors/SanX18).
+¡Disfruta de tu BindDeck! Si el proyecto te resulta útil, puedes apoyar al creador [invitándole a un café a través de GitHub Sponsors](https://github.com/sponsors/SanX18).

@@ -36,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const i18n = {
     en: {
-        app_title: "Macro Deck",
-        app_subtitle: "Programmable Macro Controller",
+        app_title: "BindDeck",
+        app_subtitle: "Control Center",
         device_connected: "Device Connected",
         device_disconnected: "Disconnected",
         device_settings: "Device Settings",
@@ -55,7 +55,7 @@ const i18n = {
         enc_3: "Undo / Redo",
         sync: "Sync to Device",
         sync_tooltip: "Send current configuration and colors to the device instantly.",
-        control_deck: "Macro Deck",
+        control_deck: "BindDeck",
         select_key_hint: "Select a key to configure its action.",
         action: "Action",
         select_key_first: "Select a key first",
@@ -92,7 +92,7 @@ const i18n = {
         save: "Save",
         about_title: "Acerca de / About",
         about_tab1: "Sobre la App / About the App",
-        about_desc1: "<strong>MacroDeck Companion for ESP32</strong><br>Version: 1.0.0<br>Developed with passion for the Maker community.<br><br>This software allows communication, profile assignment and macros with ESP32 based macro deck devices.",
+        about_desc1: "<strong>BindDeck Companion for ESP32</strong><br>Version: 1.0.0<br>Developed with passion for the Maker community.<br><br>This software allows communication, profile assignment and macros with ESP32 based BindDeck devices.",
         about_tab2: "Privacy & Transparency",
         about_desc2: "<li style='margin-bottom: 0.5rem;'>This application runs completely locally on your machine.</li><li style='margin-bottom: 0.5rem;'>It DOES NOT collect, store or transmit keystrokes, passwords, telemetry or personal data to external servers.</li><li style='margin-bottom: 0.5rem;'>Communication is strictly limited to the local connection (USB/Serial/Bluetooth) between your computer and the connected ESP32 device.</li>",
         about_tab3: "Terms & Support",
@@ -101,7 +101,7 @@ const i18n = {
         close_ask: "Ask me every time",
         close_minimize: "Minimize to System Tray",
         close_quit: "Quit Application",
-        close_title: "Close Macro Deck?",
+        close_title: "Close BindDeck?",
         close_desc: "Do you want to minimize the application to the system tray so your macros keep working, or quit entirely?",
         close_remember: "Remember my choice",
         close_minimize_btn: "Minimize to Tray",
@@ -110,8 +110,8 @@ const i18n = {
         test_mode: "Test Mode"
     },
     es: {
-        app_title: "Macro Deck",
-        app_subtitle: "Controlador Macro Programable",
+        app_title: "BindDeck",
+        app_subtitle: "Centro de Control",
         device_connected: "Dispositivo Conectado",
         device_disconnected: "Desconectado",
         device_settings: "Ajustes del Dispositivo",
@@ -129,7 +129,7 @@ const i18n = {
         enc_3: "Deshacer / Rehacer",
         sync: "Sincronizar",
         sync_tooltip: "Envía la configuración y colores actuales al dispositivo al instante.",
-        control_deck: "Macro Deck",
+        control_deck: "BindDeck",
         select_key_hint: "Selecciona una tecla para configurarla.",
         action: "Acción",
         select_key_first: "Selecciona una tecla primero",
@@ -166,7 +166,7 @@ const i18n = {
         save: "Guardar",
         about_title: "Acerca de / About",
         about_tab1: "Sobre la App",
-        about_desc1: "<strong>MacroDeck Companion for ESP32</strong><br>Versión: 1.0.0<br>Desarrollado con pasión para la comunidad Maker.<br><br>Este software permite la comunicación, asignación de perfiles y macros con dispositivos macro deck basados en microcontroladores ESP32.",
+        about_desc1: "<strong>BindDeck Companion for ESP32</strong><br>Versión: 1.0.0<br>Desarrollado con pasión para la comunidad Maker.<br><br>Este software permite la comunicación, asignación de perfiles y macros con dispositivos BindDeck basados en microcontroladores ESP32.",
         about_tab2: "Privacidad y Transparencia",
         about_desc2: "<li style='margin-bottom: 0.5rem;'>Esta aplicación funciona de forma completamente local en tu equipo.</li><li style='margin-bottom: 0.5rem;'>NO recopila, almacena ni transmite pulsaciones de teclas, contraseñas, telemetría ni datos personales a servidores externos.</li><li style='margin-bottom: 0.5rem;'>La comunicación se limita exclusivamente a la conexión local (USB/Serial/Bluetooth) entre tu ordenador y el dispositivo ESP32 conectado.</li>",
         about_tab3: "Términos y Soporte",
@@ -175,7 +175,7 @@ const i18n = {
         close_ask: "Preguntarme cada vez",
         close_minimize: "Minimizar a la Bandeja (Fondo)",
         close_quit: "Cerrar Aplicación",
-        close_title: "¿Cerrar Macro Deck?",
+        close_title: "¿Cerrar BindDeck?",
         close_desc: "¿Deseas minimizar la aplicación a la bandeja del sistema para que tus macros sigan funcionando, o cerrarla completamente?",
         close_remember: "Recordar mi decisión",
         close_minimize_btn: "Minimizar a la Bandeja",
@@ -800,12 +800,12 @@ function flashFirmware() {
 // TUTORIAL LOGIC
 const tutorialSteps = [
     {
-        title: "¡Bienvenido a MacroDeck!",
+        title: "¡Bienvenido a BindDeck!",
         text: "Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo."
     },
     {
         title: "Primer Paso: Instalar Firmware",
-        text: "Para que el ESP32 funcione con la configuración de MacroDeck, el primer paso indispensable es <strong>instalar el firmware</strong> utilizando el panel correspondiente de instalación."
+        text: "Para que el ESP32 funcione con la configuración de BindDeck, el primer paso indispensable es <strong>instalar el firmware</strong> utilizando el panel correspondiente de instalación."
     },
     {
         title: "Ajustes del Dispositivo",
@@ -824,7 +824,7 @@ const tutorialSteps = [
         text: "Arriba tienes el Modo Prueba. Si lo activas, puedes hacer clic en los botones de la pantalla virtual y arrastrar la rueda para simular su comportamiento en tiempo real."
     },
     {
-        title: "¡Gracias por usar MacroDeck!",
+        title: "¡Gracias por usar BindDeck!",
         text: "Te agradecemos mucho que hayas descargado nuestra app. Si deseas apoyar el proyecto, puedes hacerlo a través de <a href='https://github.com/sponsors/SanX18' target='_blank' style='color: var(--primary); text-decoration: underline;'>GitHub Sponsors</a>, o mediante el botón que encontrarás abajo en el pie de la aplicación."
     }
 ];
