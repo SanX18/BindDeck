@@ -561,6 +561,23 @@ def api_quit():
 def api_version():
     return jsonify({"version": CURRENT_VERSION})
 
+@app.route('/api/browse')
+def browse_file():
+    global window_ref
+    try:
+        import webview
+        if window_ref:
+            result = window_ref.create_file_dialog(
+                webview.OPEN_DIALOG, 
+                allow_multiple=False,
+                file_types=('Executables (*.exe)', 'All files (*.*)')
+            )
+            if result and len(result) > 0:
+                return jsonify({"path": result[0]})
+    except Exception as e:
+        print("Error browse:", e)
+    return jsonify({"path": ""})
+
 @app.route('/api/update_check')
 def api_update_check():
     return jsonify({"available": UPDATE_AVAILABLE, "version": NEW_VERSION_NAME})

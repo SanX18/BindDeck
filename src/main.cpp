@@ -42,7 +42,7 @@ void IRAM_ATTR readEncoder() {
 }
 
 // Pins
-const int SWITCH_PINS[8] = {13, 12, 14, 27, 26, 25, 33, 32};
+const int SWITCH_PINS[8] = {13, 12, 14, 27, 32, 33, 25, 26};
 const uint8_t MACRO_KEYS[8] = {KEY_F13, KEY_F14, KEY_F15, KEY_F16, KEY_F17, KEY_F18, KEY_F19, KEY_F20};
 Bounce2::Button switches[8];
 Bounce2::Button menuBtn;

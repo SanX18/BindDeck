@@ -247,7 +247,10 @@
 
             <div class="form-group" id="value-group">
                 <label data-i18n="value">Value</label>
-                <div class="ac-wrap"><input type="text" id="actionValue"  placeholder="e.g. calc.exe or ctrl+c"></div>
+                <div class="ac-wrap" style="display: flex; gap: 5px;">
+                    <input type="text" id="actionValue" style="flex: 1;" placeholder="e.g. calc.exe or ctrl+c">
+                    <button id="btn-browse" class="btn-secondary" style="display: none; padding: 0 10px;" title="Browse file">📁</button>
+                </div>
                 <div id="valueAcList" class="ac-list"></div>
                 <small data-i18n="value_hint">Shortcuts use + separators, for example CTRL+SHIFT+S. Actions run on the PC when the device event is received.</small>
             </div>

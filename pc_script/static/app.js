@@ -200,6 +200,11 @@ function applyLanguage(lang) {
 }
 
 function updatePresets(type) {
+    const btnBrowse = document.getElementById('btn-browse');
+    if (btnBrowse) {
+        btnBrowse.style.display = (type === 'app') ? 'block' : 'none';
+    }
+    
     const datalist = document.getElementById('valuePresets');
     if (!datalist) return;
     datalist.innerHTML = '';
@@ -484,6 +489,18 @@ document.getElementById('actionType').addEventListener('change', (e) => {
 });
 
 document.getElementById('btn-save').addEventListener('click', () => saveSettings(false));
+
+document.getElementById('btn-browse').addEventListener('click', async () => {
+    try {
+        const res = await fetch('/api/browse');
+        const data = await res.json();
+        if (data.path) {
+            document.getElementById('actionValue').value = data.path;
+        }
+    } catch (e) {
+        console.error("Error browsing file:", e);
+    }
+});
 
 document.getElementById('btn-delete').addEventListener('click', () => {
     if (!currentKey) return;
