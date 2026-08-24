@@ -12,93 +12,115 @@
 
 ---
 
+Si encontraste útil el proyecto y quieres apoyar futuros diseños, muchas gracias por el apoyo ❤️:
 
-**BindDeck** es un ecosistema completo de hardware y software diseñado para potenciar tu productividad y tu setup. Convierte un simple microcontrolador ESP32 en un potente teclado de macros personalizado, equipado con una pantalla OLED interactiva, un control analógico y botones mecánicos. Es el accesorio ideal para streamers, programadores, editores de vídeo y cualquier entusiasta de la tecnología.
+## 🌟 BindDeck: Tu Macro Pad Inteligente con ESP32 y Pantalla OLED
+BindDeck es un ecosistema completo de hardware y software diseñado para potenciar tu productividad y tu setup. Convierte un simple microcontrolador ESP32 en un potente teclado de macros personalizado, equipado con una pantalla OLED interactiva, un encoder rotativo para control de dial y botones mecánicos. Es el accesorio ideal para streamers, programadores, editores de vídeo y cualquier entusiasta de la tecnología.
+
+🖥️ APP BIND DECK (WINDOWS) : https://github.com/SanX18/BindDeck
 
 ## 🚀 ¿Qué hace la aplicación?
-
 BindDeck no es solo un teclado de atajos; es una herramienta interactiva. Todo lo que ves en la pantalla de tu PC se sincroniza al instante con tu dispositivo físico:
 
-*   **Lanzador y Atajos (8 Botones):** Asigna combinaciones complejas de teclado (ej. `CTRL+SHIFT+S`), lanza tus programas favoritos (`calc.exe`, `spotify.exe`) o ejecuta bloques enteros de texto con una sola pulsación.
-*   **Control Analógico Inteligente:** Incorpora un potenciómetro con un algoritmo de auto-calibración dinámica. Úsalo para ajustar el volumen general de tu sistema operativo, hacer zoom, navegar por pestañas o usar el deshacer/rehacer.
-*   **Monitor de Hardware en Tiempo Real:** Su pantalla OLED no solo muestra simpáticas animaciones cuando pulsas los botones; cuando está en reposo actúa como un monitor de telemetría, mostrando las temperaturas y la carga (uso) de tu CPU y GPU en tiempo real.
-*   **Textos Personalizables:** A través de la app, puedes escribir qué texto quieres que aparezca en la pantalla OLED de manera individual para cada uno de los 8 botones.
-*   **Conectividad Dual Híbrida (Cable o Inalámbrico):** Puedes usarlo clásicamente por cable USB, o de manera **100% Inalámbrica**. Envía tus macros al PC usando **Bluetooth LE** (para un bajo consumo de batería) y recibe los datos de las temperaturas del PC vía **Wi-Fi UDP Zero-Config**.
-*   **Software de PC Integrado (Plug & Play):** Cuenta con una moderna aplicación de escritorio para Windows (con Modo Claro/Oscuro y bilingüe Español/Inglés). Desde ella configuras todo visualmente y puedes hasta actualizar el firmware de tu ESP32 vía OTA (Over-The-Air) con un solo clic.
+* **Lanzador y Atajos (8 Botones):** Asigna combinaciones complejas de teclado (ej. CTRL+SHIFT+S), lanza tus programas favoritos (calc.exe, spotify.exe) o ejecuta bloques enteros de texto con una sola pulsación.
+* **Encoder Rotativo Infinito (KY-040):** Gira el dial a izquierda o derecha con tacto de pasos para ajustar el volumen general, hacer zoom, navegar por pestañas o usar deshacer/rehacer. ¡Además, al presionarlo actúa como un botón extra!
+* **Monitor de Hardware en Tiempo Real:** Su pantalla OLED no solo muestra simpáticas animaciones cuando pulsas los botones; en reposo actúa como un monitor de telemetría, mostrando las temperaturas y la carga (uso) de tu CPU y GPU en tiempo real.
+* **Textos Personalizables:** A través de la app, puedes escribir qué texto quieres que aparezca en la pantalla OLED de manera individual para cada uno de los botones.
+* **Conectividad Dual Híbrida (Cable o Inalámbrico):** Puedes usarlo por cable USB, o de manera 100% Inalámbrica. Envía tus macros al PC usando Bluetooth LE (para un bajo consumo de batería) y recibe los datos de las temperaturas del PC vía Wi-Fi UDP Zero-Config.
+
+---
+
+## 🖨️ Perfil de Impresión / Print Profile Details
+
+Este perfil de impresión está optimizado y probado en **Bambu Studio** para garantizar la mejor calidad de superficie, resistencia y facilidad de montaje.
+
+### ⚙️ Ajustes recomendados / Recommended Settings:
+
+* **Boquilla / Nozzle:** 0.4 mm
+* **Altura de capa / Layer Height:** 0.20 mm (o 0.16 mm para mayor detalle)
+* **Paredes / Wall Loops:** 2 – 3 paredes
+* **Relleno / Infill:** 15% – 20% (Grid / Gyroid)
+* **Soportes / Supports:** Revisar según orientación del plato (árbol / tree supports recomendados si aplica)*
+* **Adhesión / Bed Adhesion:** Textured PEI Plate / Smooth PEI (Limpia con agua y jabón si es necesario)
+
+### 🧵 Filamentos sugeridos / Materials:
+
+* PLA / PLA+ (Recomendado para uso decorativo o interior)
+* PETG* (Recomendado si requiere resistencia mecánica o mayor temperatura)
+
+### 📦 Contenido del Perfil:
+
+* Placa organizada con todas las piezas listas para imprimir directamente desde la app **Bambu Handy** o desde el slicer.
+* Geometría optimizada sin necesidad de ajustes adicionales.
+
+💬 *Si te ha gustado el diseño, ¡no olvides dejar tu valoración ⭐⭐⭐⭐⭐, fotos de tu resultado y darle a Boost si te ha sido útil!*
 
 ---
 
 ## 🛠️ Hardware Utilizado (BOM)
-
 Para montar la electrónica de esta carcasa, necesitarás componentes muy económicos y accesibles.
 
-1.  **Microcontrolador:** ESP32 (Se recomienda el modelo clásico ESP32-WROOM-32 Dev Kit).
-2.  **Pantalla:** Pantalla OLED de 0.96" I2C (Resolución 128x64, con controlador SSD1306).
-3.  **Switches / Botones:** 8x Switches Mecánicos. *(En este proyecto se han utilizado switches **Outemu Red**. Al ser lineales y silenciosos, ofrecen un tacto suave, rápido y perfecto para ejecutar macros sin el clásico "clic" ruidoso).*
-4.  **Control Analógico:** 1x Potenciómetro Lineal B10K (10 kOhmios).
-5.  **Cableado:** Cables Dupont para realizar las conexiones interiores (o una PCB si decides fabricarla).
-6.  **Extras:** Keycaps (teclas) de tu elección para decorar los switches mecánicos.
+1. **Microcontrolador:** ESP32 (Se recomienda el modelo clásico ESP32-WROOM-32 Dev Kit).
+2. **Pantalla:** Pantalla OLED de 0.96" I2C (Resolución 128x64, con controlador SSD1306).
+3. **Encoder Rotativo:** 1x Módulo KY-040 (Sustituye al antiguo potenciómetro, ofreciendo giro infinito y función de botón/clic al presionarlo).
+4. **Switches / Botones:** 8x Switches Mecánicos. (En este proyecto se han utilizado switches Outemu Red. Al ser lineales y silenciosos, ofrecen un tacto suave, rápido y perfecto para macros sin el clásico "clic" ruidoso).
+5. **Switch ON/OFF:** 1x SS-12F15
+6. **Batería y Carga (Inalámbrico):** 1x Batería LiPo de 3.7V (1400mAh)(49×34×5.4 mm) + 1x Módulo cargador TP4056 (USB-C).
+7. **Cableado:** Cables Dupont para realizar las conexiones interiores (o una PCB personalizada).
+8. **Extras:** Keycaps (teclas) de tu elección para decorar los switches mecánicos y un "Knob" o tapa para el encoder.
+9. **Sensor de Batería:** 2x Resistencias de 10K Ohmios (Sirven para crear un divisor de tensión y permitir que el ESP32 lea el porcentaje de carga restante sin quemarse).
 
 ---
 
 ## 🔌 Diagrama de Conexiones Físicas
 
-El cableado es directo y sencillo. No necesitas instalar resistencias adicionales para los botones, ya que el código se encarga de activar las resistencias internas (`INPUT_PULLUP`) del ESP32.
+### 🔋 Alimentación y Lector de Batería (TP4056)
+* **Cable Positivo (+) de la Batería:** Conectar al pin B+ del TP4056.
+* **Cable Negativo (-) de la Batería:** Conectar al pin B- del TP4056.
+* **OUT+ (Salida) del TP4056:** Conectar al pin VIN o 5V del ESP32.
+* **OUT- (Salida) del TP4056:** Conectar al pin GND del ESP32.
+
+### ⚡ Sensor de Porcentaje de Batería (Divisor de Tensión)
+Como el ESP32 no puede leer los 4.2V de la batería directamente, necesitamos bajar ese voltaje a la mitad usando dos resistencias de 10K de la siguiente manera:
+* Suelta una Resistencia de 10K desde el OUT+ del módulo TP4056 y conéctala al pin GPIO 35 del ESP32.
+* Suelta la otra Resistencia de 10K conectando el pin GPIO 35 hacia el pin GND del ESP32. (Esto dividirá el voltaje a la mitad, permitiendo que BindDeck te muestre un icono de batería preciso en la pantalla).
 
 ### 📺 Pantalla OLED (Comunicación I2C)
-*   **VCC:** Conectar a **3.3V** del ESP32.
-*   **GND:** Conectar a **GND** del ESP32.
-*   **SDA (Línea de Datos):** Conectar al **GPIO 21**.
-*   **SCL (Línea de Reloj):** Conectar al **GPIO 22**.
+* **VCC:** Conectar a 3.3V del ESP32.
+* **GND:** Conectar a GND del ESP32.
+* **SDA (Línea de Datos):** Conectar al GPIO 21.
+* **SCL (Línea de Reloj):** Conectar al GPIO 22.
 
-### 🎛️ Potenciómetro Analógico
-*   **Pin Izquierdo:** Conectar a **3.3V** del ESP32.
-*   **Pin Central (Señal):** Conectar al **GPIO 34**.
-*   **Pin Derecho:** Conectar a **GND** del ESP32.
+### 🎛️ Encoder Rotativo (KY-040)
+* **+ (VCC):** Conectar a 3.3V del ESP32.
+* **GND:** Conectar a GND del ESP32.
+* **CLK (Reloj):** Conectar al GPIO 18.
+* **DT (Datos):** Conectar al GPIO 19.
+* **SW (Botón del Encoder):** Conectar al GPIO 5.
 
 ### ⌨️ Switches Mecánicos (Outemu Red)
-Cada switch mecánico tiene dos patillas. Una patilla de **todos los switches debe ir conectada a GND (Tierra)**. La patilla restante de cada switch se conecta a los siguientes pines del ESP32:
-*   **Switch 1:** GPIO 13
-*   **Switch 2:** GPIO 12
-*   **Switch 3:** GPIO 14
-*   **Switch 4:** GPIO 27
-*   **Switch 5:** GPIO 26
-*   **Switch 6:** GPIO 25
-*   **Switch 7:** GPIO 33
-*   **Switch 8:** GPIO 32
+Cada switch mecánico tiene dos patillas. Una patilla de todos los switches debe ir conectada a GND (Tierra). La patilla restante de cada switch se conecta a los siguientes pines del ESP32:
 
-*(💡 Consejo: Puedes puentear o "cadenerar" con un mismo cable todas las patillas GND de los 8 switches y el potenciómetro para llevar un único cable al pin GND del ESP32).*
+* **Switch 1:** GPIO 13
+* **Switch 2:** GPIO 12
+* **Switch 3:** GPIO 14
+* **Switch 4:** GPIO 27
+* **Switch 5:** GPIO 26
+* **Switch 6:** GPIO 25
+* **Switch 7:** GPIO 33
+* **Switch 8:** GPIO 32
 
----
-
-## 💻 Instrucciones Rápidas de Software
-
-El proyecto se divide en el **Firmware** (lo que va en el ESP32) y la **App de PC**.
-
-1.  Carga el código fuente en tu ESP32 (compatible con PlatformIO / VSCode). Toda la información está disponible en el repositorio de GitHub de *SanX18/BindDeck*.
-2.  Abre la aplicación de escritorio `BindDeck.exe` en tu ordenador.
-3.  **⚠️ Importante:** La primera vez que abras la App, te pedirá permisos de Administrador en Windows. **Debes aceptarlos**. Esto es obligatorio para que el motor integrado de hardware (*LibreHardwareMonitor*) tenga acceso de lectura a los sensores de temperatura de tu CPU y Gráfica para enviarlos a la pequeña pantalla OLED.
-4.  Todo el tráfico es 100% privado y local. ¡Configura tus botones, personaliza tu experiencia y disfruta de tu propio macro pad inteligente!
+*(💡 Consejo: Puedes puentear o "cadenerar" con un mismo cable todas las patillas GND de los 8 switches, la pantalla y el encoder para llevar un único cable al pin GND del ESP32).*
 
 ---
 
-## 💖 Apoyo y Donaciones
+## 💻 Instalación y Software ¡Todo en uno!
+Olvídate de compilar código, instalar Python o usar entornos de programación complejos. Todo el proceso está simplificado para que lo gestiones directamente desde la App de Windows:
 
-El uso, modificación y distribución de este código es **completamente gratuito** para la comunidad. Se ha desarrollado invirtiendo mucho tiempo, café y pasión. 
+1. Conecta tu ESP32 al ordenador mediante un cable USB.
+2. Abre la aplicación de escritorio BindDeck.exe (puedes descargarla desde el GitHub del proyecto: SanX18/BindDeck).
+3. **Instala el Firmware:** Dentro de la app, simplemente pulsa el botón de "Firmware" y la propia aplicación se encargará de flashear (instalar) el código en tu ESP32 de forma automática con un solo clic.
+4. **Permisos de Administrador:** La primera vez que abras la App, Windows te pedirá permisos de Administrador. ⚠️ Es imprescindible aceptarlos para que el lector interno (LibreHardwareMonitor) pueda leer la temperatura de tu procesador (CPU) y tu gráfica (GPU) para mandarlas a la pequeña pantalla OLED.
+5. **¡Listo para personalizar!** Desde esa misma aplicación podrás configurar qué hace cada botón, la acción de girar el encoder KY-040, cambiar los textos de la pantalla y ajustar todo tu ecosistema de forma 100% visual.
 
-  Si este proyecto te ha sido útil, te ha inspirado o simplemente quieres invitarme a un café para apoyar el desarrollo continuo y futuros proyectos, puedes hacerlo a través de **GitHub Sponsors** o **BuyMeACoffe**:
-
-👉 **[Apoyar el proyecto en GitHub Sponsors](https://github.com/sponsors/SanX18)**
-
-👉 **[Apoyar el proyecto en ByMeACoffe]( https://www.buymeacoffee.com/sanx18)**
-
----
-
-## 📜 Privacidad y Licencia
-
-*   **Privacidad Total:** La aplicación de PC funciona de manera 100% local. No recopila telemetría, no guarda contraseñas y no se conecta a servidores externos. Todo el tráfico ocurre entre tu PC y tu cable USB.
-*   **Descargo de responsabilidad:** Este software y esquemas se distribuyen "tal cual" (AS IS). El creador no se hace responsable por daños al hardware derivados de un mal ensamblaje o configuración.
-
-<p align="center">
-  <i>Desarrollado por <strong>Marc Sancho Pastor (@SanX18)</strong> .</i>
-</p>
+*(Todo el sistema funciona de manera 100% local y privada en tu red, sin necesidad de conexión a servidores externos ni cuentas).*
