@@ -132,7 +132,15 @@ def save_config():
         print("Error guardando config:", e)
 
 # --- KEYBOARD HOOKS ---
+last_macro_times = {}
+
 def execute_macro(key_index):
+    global last_macro_times
+    now = time.time()
+    if now - last_macro_times.get(key_index, 0) < 0.3:
+        return
+    last_macro_times[key_index] = now
+    
     action = config["keys"].get(str(key_index), {})
     action_type = action.get("type", "none")
     value = action.get("value", "")
@@ -146,9 +154,13 @@ def execute_macro(key_index):
     
     if action_type == "app" and value:
         try:
-            os.startfile(value)
+            val = value.strip('"').strip("'")
+            os.startfile(val)
         except Exception as e:
-            print(f"Error abriendo app: {e}")
+            try:
+                subprocess.Popen(value, shell=True)
+            except Exception as e2:
+                print(f"Error abriendo app: {e2}")
     elif action_type == "shortcut" and value:
         try:
             keyboard.send(value)
@@ -159,6 +171,11 @@ def execute_macro(key_index):
             keyboard.write(value)
         except Exception as e:
             print(f"Error escribiendo texto: {e}")
+    elif action_type == "none":
+        try:
+            keyboard.send(f"f{key_index}")
+        except Exception as e:
+            print(f"Error enviando tecla default: {e}")
 
 
 def change_app_volume(app_name, up):
@@ -181,7 +198,14 @@ def on_key_event(e):
     if e.event_type == keyboard.KEY_DOWN:
         if e.name.startswith('f') and e.name[1:].isdigit():
             key_num = int(e.name[1:])
-            if 13 <= key_num <= 22:
+            if key_num == 23 or key_num == 24:
+                if config.get("esp32", {}).get("encMode", 0) == 5:
+                    app_name = config.get("esp32", {}).get("encApp", "")
+                    if app_name:
+                        threading.Thread(target=change_app_volume, args=(app_name, key_num == 24), daemon=True).start()
+                    return False
+                # Else let it pass or handle default if needed
+            if 13 <= key_num <= 21: # F21 is encoder button
                 action_type = config["keys"].get(str(key_num), {}).get("type", "none")
                 if action_type != "none":
                     threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
@@ -296,7 +320,7 @@ def api_config():
                 brt = new_esp32.get("brightness", 255)
                 if brt is None: brt = 255
                 if str(old_esp32.get("brightness", "")) != str(brt):
-                    serial_port.write(f"CFG:BRT:{brt}\n".encode('utf-8'))
+                    serial_port.write(f"CFG:BRIGHT:{brt}\n".encode('utf-8'))
                     time.sleep(0.1)
                 
                 # Check if key animations changed
@@ -337,20 +361,16 @@ def api_preview(mode):
             pass
     return jsonify({"success": True})
 
+wifi_status_data = {"connected": False, "ssid": "", "ip": ""}
+
 @app.route("/api/get_wifi_status", methods=["GET"])
 def api_get_wifi_status():
+    global wifi_status_data
     if serial_port and serial_port.is_open:
         try:
             serial_port.write(b"CMD:GET_WIFI\n")
-            # Wait for response
-            serial_port.timeout = 1
-            for _ in range(5): # retry reading a few lines
-                line = serial_port.readline().decode('utf-8', errors='ignore').strip()
-                if line.startswith("WIFI_INFO:"):
-                    parts = line.split(":")[1].split(",")
-                    ssid = parts[0] if len(parts) > 0 else ""
-                    ip = parts[1] if len(parts) > 1 else ""
-                    return jsonify({"connected": ssid != "DISCONNECTED", "ssid": ssid, "ip": ip})
+            time.sleep(0.5)
+            return jsonify(wifi_status_data)
         except:
             pass
     return jsonify({"connected": False, "ssid": "", "ip": ""})
@@ -464,6 +484,23 @@ def api_installed_apps():
         apps.sort(key=lambda x: x['name'])
     except Exception as e:
         print("Error en apps:", e)
+    return jsonify(apps)
+
+@app.route('/api/audio_apps')
+def api_audio_apps():
+    apps = []
+    try:
+        from pycaw.pycaw import AudioUtilities
+        sessions = AudioUtilities.GetAllSessions()
+        seen = set()
+        for session in sessions:
+            if session.Process and session.Process.name():
+                name = session.Process.name()
+                if name.lower() not in seen:
+                    seen.add(name.lower())
+                    apps.append({"name": name, "exe": name, "icon": ""})
+    except Exception as e:
+        print("Error getting audio apps:", e)
     return jsonify(apps)
 
 @app.route('/api/status')
@@ -613,6 +650,46 @@ def get_lhm_cpu_temp():
 
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+def serial_read_loop():
+    global serial_port
+    while True:
+        try:
+            sp = serial_port
+            if sp and sp.is_open and sp.in_waiting > 0:
+                line = sp.readline().decode('utf-8', errors='ignore').strip()
+                if line.startswith("BTN:"):
+                    try:
+                        idx = int(line.split(":")[1])
+                        key_num = idx + 13
+                        threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
+                    except:
+                        pass
+                elif line.startswith("ENC:"):
+                    cmd = line.split(":")[1]
+                    # Solo nos interesa APPVUP y APPVDN para controlar el app volume por USB
+                    if cmd == "APPVUP" or cmd == "APPVDN":
+                        app_name = config.get("esp32", {}).get("encApp", "")
+                        if app_name:
+                            threading.Thread(target=change_app_volume, args=(app_name, cmd == "APPVUP"), daemon=True).start()
+                    # Otras acciones de encMode 0..3 se pueden simular si queremos que funcionen 100% por USB sin Bluetooth
+                    elif cmd == "VUP": keyboard.send("volume up")
+                    elif cmd == "VDN": keyboard.send("volume down")
+                    elif cmd == "ZIN": keyboard.send("ctrl++")
+                    elif cmd == "ZOUT": keyboard.send("ctrl+-")
+                    elif cmd == "TFWD": keyboard.send("ctrl+tab")
+                    elif cmd == "TBCK": keyboard.send("ctrl+shift+tab")
+                    elif cmd == "REDO": keyboard.send("ctrl+y")
+                    elif cmd == "UNDO": keyboard.send("ctrl+z")
+                elif line.startswith("WIFI_INFO:"):
+                    global wifi_status_data
+                    parts = line.split(":")[1].split(",")
+                    ssid = parts[0] if len(parts) > 0 else ""
+                    ip = parts[1] if len(parts) > 1 else ""
+                    wifi_status_data = {"connected": ssid != "DISCONNECTED", "ssid": ssid, "ip": ip}
+        except:
+            pass
+        time.sleep(0.02)
+
 def hardware_loop():
     global serial_port
     while True:
@@ -716,6 +793,7 @@ def main():
     
     # Arrancar monitor de hardware en background
     threading.Thread(target=hardware_loop, daemon=True).start()
+    threading.Thread(target=serial_read_loop, daemon=True).start()
     
     # Enganchar teclas F13-F20
     keyboard.hook(on_key_event, suppress=False)

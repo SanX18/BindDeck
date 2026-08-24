@@ -201,6 +201,7 @@ function applyLanguage(lang) {
 
 function updatePresets(type) {
     const datalist = document.getElementById('valuePresets');
+    if (!datalist) return;
     datalist.innerHTML = '';
     
     let presets = [];
@@ -436,17 +437,28 @@ function simulateCurrentKey() {
 
 document.querySelectorAll('.keycap').forEach(btn => {
     btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.keycap').forEach(b => b.classList.remove('active-edit'));
-        e.target.classList.add('active-edit');
+        if (currentKey) {
+            // Save the currently edited key before switching
+            if (!config.keys) config.keys = {};
+            config.keys[currentKey] = {
+                type: document.getElementById('actionType').value,
+                value: document.getElementById('actionValue').value,
+                anim: parseInt(document.getElementById('keyAnim').value),
+                dispText: document.getElementById('dispText').value.substring(0, 15)
+            };
+        }
         
-        currentKey = e.target.getAttribute('data-key');
+        document.querySelectorAll('.keycap').forEach(b => b.classList.remove('active-edit'));
+        btn.classList.add('active-edit');
+        
+        currentKey = btn.getAttribute('data-key');
         const keyConfig = config.keys[currentKey] || {type: 'none', value: '', anim: -1, dispText: ''};
         
         const panel = document.getElementById('config-panel');
         panel.style.opacity = '1';
         panel.style.pointerEvents = 'auto';
         
-        const swNumber = e.target.innerText.includes('SW') ? e.target.innerText.split(' ')[1] : 'Encoder';
+        const swNumber = btn.innerText.includes('SW') ? btn.innerText.split(' ')[1] : 'Encoder';
         const lang = document.getElementById('appLang').value || 'en';
         const prefix = (lang === 'es') ? 'Configuración Switch ' : 'Configuring Switch ';
         document.getElementById('panel-subtitle').innerText = `${prefix}${swNumber} (F${currentKey})`;
@@ -968,13 +980,29 @@ function buildAcList(inputEl, listEl, type) {
     }, true);
 
 }
-function updateAcList(inputEl, listEl, type) {
-    if ((type === 'action' && document.getElementById('actionType').value !== 'app') || !installedApps.length) {
+async function updateAcList(inputEl, listEl, type) {
+    if (type === 'action' && document.getElementById('actionType').value !== 'app') {
         listEl.style.display = 'none';
         return;
     }
+    
+    let sourceApps = installedApps;
+    if (type === 'enc') {
+        try {
+            const res = await fetch('/api/audio_apps');
+            sourceApps = await res.json();
+        } catch (e) {
+            sourceApps = [];
+        }
+    }
+    
+    if (!sourceApps.length) {
+        listEl.style.display = 'none';
+        return;
+    }
+    
     const q = inputEl.value.toLowerCase();
-    const filtered = installedApps.filter(a => a.name.toLowerCase().includes(q) || a.exe.toLowerCase().includes(q));
+    const filtered = sourceApps.filter(a => a.name.toLowerCase().includes(q) || a.exe.toLowerCase().includes(q));
     listEl.innerHTML = '';
     if (filtered.length === 0) { listEl.style.display = 'none'; return; }
     
@@ -999,10 +1027,10 @@ function updateAcList(inputEl, listEl, type) {
             // trigger save
             if (type === 'enc') {
                 config.esp32.encApp = a.exe;
-                saveConfig();
+                saveSettings();
             } else {
                 config.keys[currentKey].value = a.path;
-                saveConfig();
+                saveSettings();
             }
         });
         listEl.appendChild(item);

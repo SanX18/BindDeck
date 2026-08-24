@@ -443,9 +443,9 @@ void drawAction() {
   if (lastActionKeyIndex == -3) {
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
-    if (encMode == 0) {
-      display.setCursor(46, 15);
-      display.print("VOLUME");
+    if (encMode == 0 || encMode == 5) {
+      display.setCursor(encMode == 0 ? 46 : 40, 15);
+      display.print(encMode == 0 ? "VOLUME" : "APP VOL");
       display.drawRect(14, 35, 100, 10, SSD1306_WHITE);
       display.fillRect(14, 35, visualVolume, 10, SSD1306_WHITE);
     } else if (encMode == 1) {
@@ -567,25 +567,34 @@ void drawMenu() {
 }
 
 void handleEncoderAction(bool forward) {
-  if (!bleKeyboard.isConnected()) return;
-  
   if (encMode == 0) { // Volume
-    bleKeyboard.write(forward ? KEY_MEDIA_VOLUME_UP : KEY_MEDIA_VOLUME_DOWN);
+    if (bleKeyboard.isConnected()) bleKeyboard.write(forward ? KEY_MEDIA_VOLUME_UP : KEY_MEDIA_VOLUME_DOWN);
+    Serial.println(forward ? "ENC:VUP" : "ENC:VDN");
   } else if (encMode == 1) { // Zoom (Ctrl + / Ctrl -)
-    bleKeyboard.press(KEY_LEFT_CTRL);
-    bleKeyboard.write(forward ? '+' : '-');
-    bleKeyboard.releaseAll();
+    if (bleKeyboard.isConnected()) {
+      bleKeyboard.press(KEY_LEFT_CTRL);
+      bleKeyboard.write(forward ? '+' : '-');
+      bleKeyboard.releaseAll();
+    }
+    Serial.println(forward ? "ENC:ZIN" : "ENC:ZOUT");
   } else if (encMode == 2) { // Browser Tabs
-    bleKeyboard.press(KEY_LEFT_CTRL);
-    if (!forward) bleKeyboard.press(KEY_LEFT_SHIFT);
-    bleKeyboard.write(KEY_TAB);
-    bleKeyboard.releaseAll();
+    if (bleKeyboard.isConnected()) {
+      bleKeyboard.press(KEY_LEFT_CTRL);
+      if (!forward) bleKeyboard.press(KEY_LEFT_SHIFT);
+      bleKeyboard.write(KEY_TAB);
+      bleKeyboard.releaseAll();
+    }
+    Serial.println(forward ? "ENC:TFWD" : "ENC:TBCK");
   } else if (encMode == 3) { // Undo / Redo
-    bleKeyboard.press(KEY_LEFT_CTRL);
-    bleKeyboard.write(forward ? 'y' : 'z');
-    bleKeyboard.releaseAll();
+    if (bleKeyboard.isConnected()) {
+      bleKeyboard.press(KEY_LEFT_CTRL);
+      bleKeyboard.write(forward ? 'y' : 'z');
+      bleKeyboard.releaseAll();
+    }
+    Serial.println(forward ? "ENC:REDO" : "ENC:UNDO");
   } else if (encMode == 5) { // App Volume
-    bleKeyboard.write(forward ? KEY_F22 : KEY_F21);
+    if (bleKeyboard.isConnected()) bleKeyboard.write(forward ? KEY_F24 : KEY_F23);
+    Serial.println(forward ? "ENC:APPVUP" : "ENC:APPVDN");
   }
 }
 
@@ -692,6 +701,7 @@ void loop() {
           delay(10);
           bleKeyboard.releaseAll();
         }
+        Serial.println("BTN:" + String(i));
         lastActionKeyIndex = i;
         currentState = STATE_ACTION;
         actionStartTime = millis();
@@ -707,6 +717,7 @@ void loop() {
           delay(10);
           bleKeyboard.releaseAll();
         }
+        Serial.println("BTN:8");
         lastActionKeyIndex = 8;
         currentState = STATE_ACTION;
         actionStartTime = millis();
@@ -730,7 +741,7 @@ void loop() {
         handleEncoderAction(forward);
         delay(15);
         
-        if (encMode == 0) {
+        if (encMode == 0 || encMode == 5) {
            visualVolume += forward ? 4 : -4;
            if (visualVolume < 0) visualVolume = 0;
            if (visualVolume > 100) visualVolume = 100;
