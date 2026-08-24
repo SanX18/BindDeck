@@ -5,7 +5,7 @@ a = Analysis(
     ['pc_monitor.py'],
     pathex=[],
     binaries=[],
-    datas=[('templates', 'templates'), ('static', 'static')],
+    datas=[('templates', 'templates'), ('static', 'static'), ('firmware.bin', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

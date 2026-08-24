@@ -163,7 +163,10 @@ def execute_macro(key_index):
                 print(f"Error abriendo app: {e2}")
     elif action_type == "shortcut" and value:
         try:
-            keyboard.send(value)
+            keys = value.split('+')
+            for k in keys: keyboard.press(k)
+            time.sleep(0.05)
+            for k in reversed(keys): keyboard.release(k)
         except Exception as e:
             print(f"Error enviando atajo: {e}")
     elif action_type == "text" and value:
@@ -173,7 +176,9 @@ def execute_macro(key_index):
             print(f"Error escribiendo texto: {e}")
     elif action_type == "none":
         try:
-            keyboard.send(f"f{key_index}")
+            keyboard.press(f"f{key_index}")
+            time.sleep(0.05)
+            keyboard.release(f"f{key_index}")
         except Exception as e:
             print(f"Error enviando tecla default: {e}")
 
