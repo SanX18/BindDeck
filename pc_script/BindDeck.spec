@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_data_files
 
-datas = [('templates', 'templates'), ('static', 'static'), ('LibreHardwareMonitor', 'LibreHardwareMonitor'), ('firmware.bin', '.'), ('nircmd.exe', '.')]
+datas = [('templates', 'templates'), ('static', 'static'), ('LibreHardwareMonitor', 'LibreHardwareMonitor'), ('firmware.bin', '.'), ('SoundVolumeView.exe', '.')]
 datas += collect_data_files('esptool')
 
 

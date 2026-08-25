@@ -74,7 +74,7 @@ NEW_VERSION_NAME = ""
 
 # TODO: EL USUARIO DEBE CAMBIAR ESTO POR SU REPO REAL (Ej. "SanX18/BindDeck")
 GITHUB_REPO = "SanX18/BindDeck"
-CURRENT_VERSION = "V1.0.0.3"
+CURRENT_VERSION = "V1.0.0.4"
 
 def check_for_updates():
     global UPDATE_AVAILABLE, NEW_VERSION_URL, NEW_VERSION_NAME
@@ -210,19 +210,17 @@ def change_app_volume(app_name, up):
 current_audio_toggle = 0
 def toggle_audio():
     global current_audio_toggle
-    # List of (DeviceNameForNircmd, DisplayNameForOLED)
-    # NirCmd uses the exact name of the device or connection in Windows Sound Panel
+    # Use SoundVolumeView Device Names for precise switching
     devices = [
         ("Hi-MAX", "Hi-MAX"),
-        ("G435", "G435")
+        ("G435 Wireless Gaming Headset", "G435")
     ]
     current_audio_toggle = (current_audio_toggle + 1) % len(devices)
     dev = devices[current_audio_toggle]
     
     try:
-        nircmd_path = os.path.join(sys._MEIPASS, "nircmd.exe") if getattr(sys, 'frozen', False) else os.path.abspath(os.path.join(os.path.dirname(__file__), "nircmd.exe"))
-        subprocess.run([nircmd_path, "setdefaultsounddevice", dev[0]], creationflags=subprocess.CREATE_NO_WINDOW)
-        subprocess.run([nircmd_path, "setdefaultsounddevice", dev[0], "2"], creationflags=subprocess.CREATE_NO_WINDOW) # Default Communications
+        svv_path = os.path.join(sys._MEIPASS, "SoundVolumeView.exe") if getattr(sys, 'frozen', False) else os.path.abspath(os.path.join(os.path.dirname(__file__), "SoundVolumeView.exe"))
+        subprocess.run([svv_path, "/SetDefault", dev[0], "all"], creationflags=subprocess.CREATE_NO_WINDOW)
         
         if serial_port and serial_port.is_open:
             serial_port.write(f"CMD:MSG:{dev[1]}\n".encode())
