@@ -32,13 +32,13 @@
             <button id="btn-sync-header" title="Sync to Device" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s; margin-left: 10px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-3.08 1.48"/></svg>
             </button>
-            <button id="btn-tutorial-header" title="Ver tutorial" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+            <button id="btn-tutorial-header" title="View tutorial" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </button>
             <button id="btn-open-about" title="Info" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             </button>
-            <button id="btn-open-settings" title="Ajustes" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+            <button id="btn-open-settings" title="Settings" style="background:transparent; border:none; color:var(--text-main); cursor:pointer; display: flex; align-items: center; justify-content: center; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
         </div>
@@ -47,8 +47,8 @@
     <div class="main-layout">
     
         <div id="update-banner" style="display:none; background: var(--primary); color: white; padding: 10px; text-align: center; border-radius: 8px; margin: 10px;">
-            <span data-i18n="new_version">Nueva versión disponible:</span> <span id="update-version" style="font-weight: bold;"></span>
-            <button onclick="startUpdate()" style="margin-left: 15px; padding: 5px 15px; background: white; color: var(--primary); border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" data-i18n="update_now">Actualizar ahora</button>
+            <span data-i18n="new_version">New version available:</span> <span id="update-version" style="font-weight: bold;"></span>
+            <button onclick="startUpdate()" style="margin-left: 15px; padding: 5px 15px; background: white; color: var(--primary); border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" data-i18n="update_now">Update now</button>
         </div>
         
         <!-- LEFT PANEL: Global Settings -->
@@ -63,20 +63,20 @@
                     <option value="1" data-i18n="anim_1">Flash Notification</option>
                     <option value="2" data-i18n="anim_2">Minimal Text</option>
                     <option value="3" data-i18n="anim_3">Waves + Mic Mute</option>
-                    <option value="4" data-i18n="anim_4">Imagen Personalizada (.h)</option>
+                    <option value="4" data-i18n="anim_4">Custom Image (.h)</option>
                 </select>
                 
                 <div id="customAnimContainer" style="display: none; margin-top: 10px; background: var(--bg-panel); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
                     <label for="customAnimFile" class="btn-secondary" style="display: inline-block; width: 100%; text-align: center; cursor: pointer; font-size: 0.85rem; padding: 0.4rem;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Subir Archivo .h
+                        Upload .h File
                     </label>
                     <input type="file" id="customAnimFile" accept=".h" style="display: none;" onchange="uploadCustomAnim()">
                     <p id="customAnimStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; text-align: center; margin-bottom: 0;"></p>
                     
                     <div style="text-align: center; margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px;">
                         <a href="https://ejemplo.com/animaciones" target="_blank" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: bold;">
-                            Explorar mas animaciones!
+                            Explore more animations!
                         </a>
                     </div>
                 </div>
@@ -99,20 +99,20 @@
                         <option value="1" data-i18n="enc_1">Zoom (In/Out)</option>
                         <option value="2" data-i18n="enc_2">Browser Tabs (Prev/Next)</option>
                         <option value="3" data-i18n="enc_3">Undo / Redo</option>
-                        <option value="5">Volumen de App Específica</option>
+                        <option value="5">Specific App Volume</option>
                     </select>
-                    <button class="btn-secondary test-mode-element" onclick="simulateAction(-3)" title="Simular Giro">
+                    <button class="btn-secondary test-mode-element" onclick="simulateAction(-3)" title="Simulate Turn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
                     </button>
-                    <button class="btn-secondary test-mode-element" onclick="simulateAction(-1)" title="Simular Clic">
+                    <button class="btn-secondary test-mode-element" onclick="simulateAction(-1)" title="Simulate Click">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
                 </div>
             </div>
 
               <div class="form-group" id="encAppContainer" style="display:none; border-top: 1px solid var(--border); padding-top: 15px;">
-                  <label style="display:block; margin-bottom: 5px;">Nombre del proceso de la App (.exe)</label>
-                  <div class="ac-wrap"><input type="text" id="encApp"  placeholder="Ejemplo: Spotify.exe" style="width:100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);"><div id="encAppAcList" class="ac-list"></div></div>
+                  <label style="display:block; margin-bottom: 5px;">App process name (.exe)</label>
+                  <div class="ac-wrap"><input type="text" id="encApp"  placeholder="Example: Spotify.exe" style="width:100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);"><div id="encAppAcList" class="ac-list"></div></div>
               </div>
 
             
@@ -145,24 +145,24 @@
                 </div>
             </div>            
             <details class="form-group" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; cursor: pointer;">
-                <summary style="font-weight: bold; margin-bottom: 10px; color: var(--primary);">WIFI (TEMP SIN CABLES)</summary>
+                <summary style="font-weight: bold; margin-bottom: 10px; color: var(--primary);">WIFI (TEMP WIRELESS)</summary>
                 <div style="margin-bottom: 10px; font-size: 13px;">
-                    Estado: <span id="wifiStatusText" style="color: var(--text-muted);">Comprobando...</span>
+                    Status: <span id="wifiStatusText" style="color: var(--text-muted);">Checking...</span>
                 </div>
                 <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                    <input type="text" id="wifiSSID" placeholder="Nombre de la Red (SSID)" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
+                    <input type="text" id="wifiSSID" placeholder="Network Name (SSID)" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
                 </div>
                 <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-                    <input type="password" id="wifiPass" placeholder="Contraseña" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
+                    <input type="password" id="wifiPass" placeholder="Password" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-body); color: var(--text-main);">
                 </div>
-                <button class="btn-primary" onclick="saveWifiConfig()" style="width: 100%;">Guardar y Enviar al Dispositivo</button>
+                <button class="btn-primary" onclick="saveWifiConfig()" style="width: 100%;">Save and Send to Device</button>
             </details>
             
             <div class="form-group" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
-                <label style="display: block; margin-bottom: 5px;">Configuración Inicial / Rescate</label>
-                <button class="btn-secondary" id="btn-flash-bundled" style="width: 100%; border-color: var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px;" title="Instala la versión oficial del Firmware incluída en esta app">
+                <label style="display: block; margin-bottom: 5px;">Initial Setup / Rescue</label>
+                <button class="btn-secondary" id="btn-flash-bundled" style="width: 100%; border-color: var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px;" title="Install the official Firmware version included in this app">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Instalar Firmware Oficial
+                    Install Official Firmware
                 </button>
             </div>
         </div>
@@ -216,11 +216,11 @@
                 <button class="btn-secondary" style="background: var(--bg-input); border-color: var(--primary); color: var(--primary);" data-i18n="press">Press</button>
                 <button class="btn-secondary test-mode-element" onclick="simulateCurrentKey()" style="border-color: #22c55e; color: #22c55e; display:flex; align-items:center; gap:5px;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    Probar Pantalla
+                    Test Screen
                 </button>
                 <button class="btn-secondary test-mode-element" onclick="fetch('/api/simulate_temp', {method:'POST'})" style="border-color: #ef4444; color: #ef4444; display:flex; align-items:center; gap:5px;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"></path></svg>
-                    Alerta Temp
+                    Temp Alert
                 </button>
             </div>
 
@@ -384,15 +384,15 @@
     <!-- Tutorial Modal -->
     <div id="tutorial-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h2 id="tut-title" style="margin-bottom: 15px;">¡Bienvenido a BindDeck!</h2>
+            <h2 id="tut-title" style="margin-bottom: 15px;">Welcome to BindDeck!</h2>
             <p id="tut-text" style="color: var(--text-muted); margin-bottom: 20px; min-height: 60px;">
-                Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo.
+                Let's give you a quick tour so you can discover everything you can do with your device.
             </p>
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span id="tut-progress" style="font-size: 12px; color: var(--text-muted);">1 / 4</span>
                 <div style="display: flex; gap: 10px;">
-                    <button id="tut-btn-skip" class="btn-secondary" style="width: auto; padding: 0.6rem 1.2rem;">Omitir</button>
-                    <button id="tut-btn-next" class="btn-primary" style="width: auto; margin-top: 0; padding: 0.6rem 1.2rem;">Siguiente</button>
+                    <button id="tut-btn-skip" class="btn-secondary" style="width: auto; padding: 0.6rem 1.2rem;">Skip</button>
+                    <button id="tut-btn-next" class="btn-primary" style="width: auto; margin-top: 0; padding: 0.6rem 1.2rem;">Next</button>
                 </div>
             </div>
         </div>

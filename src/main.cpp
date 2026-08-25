@@ -266,7 +266,7 @@ void parseSerialData() {
 }
 
 // Batery config
-const int BATTERY_PIN = 35; // Pin analogico para medir voltaje
+const int BATTERY_PIN = 35; // Analog pin to measure voltage
 
 bool isBatteryCharging = false;
 
@@ -278,49 +278,49 @@ int getBatteryPercentage() {
   static float lastChargingCheckVal = 0;
   static unsigned long lastChargingCheckTime = 0;
   
-  // Con un divisor de voltaje (100k + 100k), el voltaje en el pin es la mitad de la bateria.
-  // Bateria max = 4.2V -> Pin = 2.1V.
-  // En el ESP32, 2.1V es aprox 2600-2800 en el ADC de 12 bits (0-4095).
-  // Estos valores deben ajustarse en base al divisor real que uses.
+  // With a voltage divider (100k + 100k), the pin voltage is half of the battery.
+  // Battery max = 4.2V -> Pin = 2.1V.
+  // On the ESP32, 2.1V is approx 2600-2800 in the 12-bit ADC (0-4095).
+  // These values must be adjusted based on the real divider you use.
   int raw = analogRead(BATTERY_PIN);
   
-  // Si el pin no está conectado al divisor, leerá un valor muy bajo (ruido o 0)
-  // Una batería agotada (3.0V) seguiría dando > 1800. Así que si es menor a 1000, 
-  // sabemos seguro que no hay hardware de medición conectado.
+  // If the pin is not connected to the divider, it will read a very low value (noise or 0)
+  // A depleted battery (3.0V) would still give > 1800. So if it is less than 1000, 
+  // we know for sure that there is no measurement hardware connected.
   if (raw < 1000) {
     filteredRaw = -1;
     isBatteryCharging = false;
-    return -1; // -1 significa "Batería no detectada"
+    return -1; // -1 means "Battery not detected"
   }
   
   if (filteredRaw == -1) {
-    filteredRaw = raw; // Inicializar en la primera lectura válida
+    filteredRaw = raw; // Initialize on first valid reading
     smoothForCharging = raw;
     lastChargingCheckVal = raw;
   }
   
-  // EMA rápido para detectar subidas de voltaje bruscas (cargador)
+  // Fast EMA to detect sudden voltage rises (charger)
   smoothForCharging = (0.2 * raw) + (0.8 * smoothForCharging);
   
-  // Comprobar saltos cada 2 segundos
+  // Check for jumps every 2 seconds
   if (millis() - lastChargingCheckTime > 2000) {
     if (smoothForCharging - lastChargingCheckVal > 60) {
-      isBatteryCharging = true; // Subió el voltaje de golpe -> Cargando
+      isBatteryCharging = true; // Sudden voltage rise -> Charging
     } else if (lastChargingCheckVal - smoothForCharging > 60) {
-      isBatteryCharging = false; // Bajó de golpe -> Desconectado
+      isBatteryCharging = false; // Sudden drop -> Disconnected
     }
     lastChargingCheckVal = smoothForCharging;
     lastChargingCheckTime = millis();
   }
   
-  // Filtro de media móvil exponencial (EMA) para suavizar la lectura
+  // Exponential moving average (EMA) filter to smooth the reading
   if (millis() - lastBatteryUpdate > 50) {
     filteredRaw = (0.05 * raw) + (0.95 * filteredRaw);
     lastBatteryUpdate = millis();
   }
   
-  // Asumiendo lectura de 0 a 4095. Para 4.2V (100%), leemos aprox 2600. Para 3.3V (0%), leemos aprox 2050.
-  // IMPORTANTE: Ajustar estos valores experimentalmente con un polímetro.
+  // Assuming reading from 0 to 4095. For 4.2V (100%), we read approx 2600. For 3.3V (0%), we read approx 2050.
+  // IMPORTANT: Adjust these values experimentally with a multimeter.
   int minRaw = 2050; // 3.3V
   int maxRaw = 2600; // 4.2V
   
@@ -348,7 +348,7 @@ void drawBatteryIcon(int x, int y, int percentage, bool isCharging) {
   }
   
   if (isCharging) {
-    // Dibujar un rayo en el centro. Usamos INVERSE para que se vea blanco sobre fondo negro, o negro sobre la barra de llenado.
+    // Draw a lightning bolt in the center. We use INVERSE so it looks white on black background, or black on the fill bar.
     int lx = iconX + 8;
     int ly = y + 1;
     display.drawLine(lx + 3, ly + 1, lx + 1, ly + 4, SSD1306_INVERSE);
@@ -375,20 +375,20 @@ void drawBTIcon(int x, int y) {
 void drawIdle() {
   display.clearDisplay();
 
-  // Si no hemos recibido datos (ni por USB ni por WiFi) en 3 segundos,
-  // asumimos que no hay PC conectado o hay problemas de conexion
+  // If we haven't received data (neither USB nor WiFi) in 3 seconds,
+  // we assume there is no PC connected or there are connection problems
   bool isDisconnected = (millis() - lastDataTime > 3000);
 
   if (cpu_temp > 85 || gpu_temp > 85) {
-    if ((millis() / 500) % 2 == 0) { // Parpadeo cada 500ms
+    if ((millis() / 500) % 2 == 0) { // Blink every 500ms
       display.fillRect(0, 0, 128, 64, SSD1306_WHITE);
       display.setTextColor(SSD1306_BLACK);
       display.setTextSize(2);
       display.setCursor(20, 15);
-      display.println("ALERTA!");
+      display.println("ALERT!");
       display.setTextSize(1);
       display.setCursor(15, 40);
-      if (cpu_temp > 85) display.print("CPU TEMP ALTA: "); else display.print("GPU TEMP ALTA: ");
+      if (cpu_temp > 85) display.print("HIGH CPU TEMP: "); else display.print("HIGH GPU TEMP: ");
       display.println(cpu_temp > 85 ? cpu_temp : gpu_temp);
       display.display();
       return;
@@ -418,8 +418,8 @@ void drawIdle() {
   bool isConnectedByCable = (millis() - lastSerialTime < 3000);
   
   if (batPct != -1) {
-      // Mostrar la bateria SIEMPRE que estemos inalambricos (!isConnectedByCable)
-      // O SIEMPRE que este cargando (isBatteryCharging)
+      // Show the battery ALWAYS when we are wireless (!isConnectedByCable)
+      // Or ALWAYS when it is charging (isBatteryCharging)
       if (!isConnectedByCable || isBatteryCharging) {
           drawBatteryIcon(80, 0, batPct, isBatteryCharging);
       }
@@ -448,18 +448,18 @@ void drawUpdateScreen() {
   while(true) {
     display.clearDisplay();
     
-    // Textos
+    // Texts
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     
     display.setCursor(20, 35);
-    display.println("Actualizando...");
+    display.println("Updating...");
     
     display.setCursor(16, 45);
-    display.println("No desconecte el");
+    display.println("Do not disconnect");
     
     display.setCursor(31, 55);
-    display.println("dispositivo");
+    display.println("the device");
     
     // Spinner
     int cx = 64;

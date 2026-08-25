@@ -1,3 +1,81 @@
+# User Manual: BindDeck ESP32
+
+Welcome to the **BindDeck** user manual, your custom macro keyboard powered by an ESP32. This manual details all the features of your device and how to get the most out of it using the desktop application.
+
+---
+
+## 1. Main Device Features
+Your BindDeck device is not just a macro keyboard, it is an interactive desktop assistant.
+* **8 Mechanical Keys (SW1 - SW8):** Fully customizable to open programs, send shortcuts, type text, or control media.
+* **Smart Potentiometer:** Multifunction wheel with dynamic auto-calibration to control system volume, zoom, tab switching, or undo/redo.
+* **Integrated OLED Screen:** Displays custom animations when each key is pressed, PC performance statistics (CPU and GPU), and an interactive sleep mode.
+* **Dual Connectivity:** Communicates with the PC via **USB** (to receive settings and system statistics) and acts as a virtual keyboard via **Bluetooth** for latency-free control.
+
+---
+
+## 2. Initial Setup (First Steps)
+
+1. **Firmware Installation:** Before using the application, make sure you have loaded the code onto the ESP32 (via PlatformIO or by installing the included `firmware.bin`).
+2. **USB Connection:** Connect the BindDeck to your PC's USB port. This will power the device and establish the Serial connection needed for telemetry.
+3. **Bluetooth Synchronization:** Pair the ESP32 in your computer's Bluetooth settings. It will appear as a Bluetooth keyboard.
+4. **Open BindDeck App:** Start the executable on your computer. The application will automatically detect the USB port (COM) the device is connected to. If the connection indicator (top right) is green, you are ready!
+
+---
+
+## 3. Using the Desktop Application
+
+The application has a virtual interface that mimics your physical hardware. Any changes you make here must be sent to the device by clicking the **Sync Device** button (blue button with an update icon).
+
+### Customize Keys (Macros)
+Click on any key (SW1 to SW8) in the virtual application to edit its behavior. A menu will open where you can configure:
+* **Action Type:**
+  * `Programa` (Program): Select the path of a `.exe` executable to open it instantly.
+  * `Multimedia`: Controls like Play/Pause, Next, Previous, Mute.
+  * `Atajo de teclado` (Keyboard shortcut): Combinations like `Ctrl + C`, `Alt + Tab`, etc.
+  * `Texto` (Text): Type an entire paragraph by pressing a single button.
+* **Label (On-Screen Text):** The short name that will appear on the OLED screen when the button is pressed.
+* **OLED Animation:** Choose a specific animation (Check, Lightning, Mute, Heart, etc.) to play on the physical and virtual screen simultaneously when the key is pressed.
+
+### Configure the Potentiometer (Wheel)
+The analog knob is your best ally. On the right side panel you can select its operating mode (`encMode`):
+* `Volumen de Windows` (Windows Volume): Raises and lowers the master volume.
+* `Zoom`: Zooms in/out in browsers and editors (Ctrl +/-).
+* `Pestañas` (Tabs): Navigates between open tabs in your browser.
+* `Deshacer / Rehacer` (Undo / Redo): Ideal for design and editing.
+
+*Technical Note:* The wheel incorporates continuous dynamic tracking logic. Every time you turn on the device, it adjusts millimeter by millimeter to the actual travel of your hardware to avoid dead zones. If you notice it lacks travel, turn it all the way to the stops once after turning it on.
+
+### Brightness and Screen
+* Adjust the **OLED Brightness** slider to change the intensity of the screen (ideal for working at night).
+* When the keyboard detects inactivity (no keys pressed or wheel turned for 20 seconds), the screen will enter a "Sleep" mode to protect the OLED panel.
+
+---
+
+## 4. Telemetry and Resource Monitor (PC Monitor)
+As long as the desktop application is open or minimized in the System Tray, it will be reading your computer's status in the background using *LibreHardwareMonitor*. 
+On your BindDeck's sleep screen you will be able to see in real-time:
+* **CPU and GPU Temperature** (in ºC).
+* **CPU and GPU Load/Usage** (in %).
+
+If any of the temperatures exceeds 85ºC, the device screen will show you a warning alert to protect your equipment.
+
+---
+
+## 5. Frequently Asked Questions / Troubleshooting
+
+* **The indicator is red and says "Disconnected":** Make sure the USB cable supports data transmission and not just charging. Close other programs that might be occupying the COM port (such as the Arduino Serial Monitor or VSCode).
+* **I press a button and it does nothing in Windows:** Verify that the device is properly paired via Bluetooth. The USB cable sends the settings, but the actual keystrokes are sent via Bluetooth (it acts as a wireless keyboard).
+* **The volume wheel acts strangely on startup:** Simply turn the wheel once from one end to the other. The chip will learn its physical limits instantly and will be 100% accurate again.
+* **The program doesn't read temperatures:** Make sure to run the BindDeck application as **Administrator**, as Windows requires elevated permissions for *LibreHardwareMonitor* to read motherboard and graphics card sensors.
+
+---
+
+Enjoy your BindDeck! If you find the project useful, you can support the creator by [buying him a coffee through GitHub Sponsors](https://github.com/sponsors/SanX18).
+
+---
+
+## 🇪🇸 Versión en Español / Spanish Version
+
 # Manual de Usuario: BindDeck ESP32
 
 Bienvenido al manual de usuario de **BindDeck**, tu teclado macro personalizado potenciado por un ESP32. Este manual detalla todas las características de tu dispositivo y cómo sacarle el máximo partido utilizando la aplicación de escritorio.

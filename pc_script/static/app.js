@@ -673,12 +673,12 @@ document.getElementById('btn-check-updates').addEventListener('click', async () 
         if (data.available) {
             document.getElementById('update-banner').style.display = 'block';
             document.getElementById('update-version').innerText = data.version;
-            alert((document.getElementById('appLang').value === 'es') ? "¡Hay una nueva versión disponible!" : "New version available!");
+            alert("New version available!");
         } else {
-            alert((document.getElementById('appLang').value === 'es') ? "Ya tienes la última versión instalada." : "You are on the latest version.");
+            alert("You are on the latest version.");
         }
     } catch(e) {
-        alert("Error de conexión");
+        alert("Connection error");
     }
     
     btn.innerText = originalText;
@@ -695,10 +695,10 @@ setInterval(async () => {
             const wifiSpan = document.getElementById('wifiStatusText');
             if(wifiSpan) {
                 if(wifi.connected) {
-                    wifiSpan.innerText = `Conectado a ${wifi.ssid} (${wifi.ip})`;
+                    wifiSpan.innerText = `Connected to ${wifi.ssid} (${wifi.ip})`;
                     wifiSpan.style.color = '#4ade80';
                 } else {
-                    wifiSpan.innerText = `Desconectado`;
+                    wifiSpan.innerText = `Disconnected`;
                     wifiSpan.style.color = 'var(--text-muted)';
                 }
             }
@@ -755,17 +755,17 @@ setInterval(async () => {
 
 async function startUpdate() {
     const lang = document.getElementById('appLang').value || 'en';
-    const msg = (lang === 'es') ? "¿Seguro que quieres actualizar? El dispositivo se reiniciará." : "Are you sure you want to update? Device will restart.";
+    const msg = "Are you sure you want to update? Device will restart.";
     if(!confirm(msg)) return;
     
     const banner = document.getElementById('update-banner');
-    banner.innerHTML = (lang === 'es') ? "Actualizando... NO DESCONECTES EL CABLE. Revisa la pantalla del dispositivo." : "Updating... DO NOT DISCONNECT. Check device screen.";
+    banner.innerHTML = "Updating... DO NOT DISCONNECT. Check device screen.";
     
     try {
         const res = await fetch('/api/do_update', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-            alert((lang === 'es') ? "¡Actualización completada con éxito!" : "Update successful!");
+            alert("Update successful!");
             banner.style.display = 'none';
         } else {
             alert("Error: " + data.error);
@@ -806,20 +806,20 @@ document.getElementById('btn-close-quit').addEventListener('click', async () => 
 function flashFirmware() {
     const btn = document.getElementById('btn-flash-firmware');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<span data-i18n="flashing">Instalando...</span>';
+    btn.innerHTML = '<span data-i18n="flashing">Installing...</span>';
     btn.disabled = true;
     
     fetch('/api/flash', {method: 'POST'})
     .then(res => res.json())
     .then(data => {
         if(data.success) {
-            alert("Firmware instalado correctamente!");
+            alert("Firmware installed successfully!");
         } else {
-            alert("Error instalando firmware: " + data.error);
+            alert("Error installing firmware: " + data.error);
         }
     })
     .catch(e => {
-        alert("Error de conexion: " + e);
+        alert("Connection error: " + e);
     })
     .finally(() => {
         btn.innerHTML = originalText;
@@ -831,32 +831,32 @@ function flashFirmware() {
 // TUTORIAL LOGIC
 const tutorialSteps = [
     {
-        title: "¡Bienvenido a BindDeck!",
-        text: "Vamos a darte un rápido paseo para que descubras todo lo que puedes hacer con tu dispositivo."
+        title: "Welcome to BindDeck!",
+        text: "Let's give you a quick tour so you can discover everything you can do with your device."
     },
     {
-        title: "Primer Paso: Instalar Firmware",
-        text: "Para que el ESP32 funcione con la configuración de BindDeck, el primer paso indispensable es <strong>instalar el firmware</strong> utilizando el panel correspondiente de instalación."
+        title: "First Step: Install Firmware",
+        text: "For the ESP32 to work with the BindDeck configuration, the first indispensable step is to <strong>install the firmware</strong> using the corresponding installation panel."
     },
     {
-        title: "Ajustes del Dispositivo",
-        text: "En el panel de la izquierda puedes conectar tu ESP32, ya sea por USB, Bluetooth o Wi-Fi, y cambiar el comportamiento de los LEDs y la pantalla OLED."
+        title: "Device Settings",
+        text: "In the left panel you can connect your ESP32, either via USB, Bluetooth or Wi-Fi, and change the behavior of the LEDs and the OLED screen."
     },
     {
-        title: "Configuración de Teclas",
-        text: "En el panel de la derecha (Acción) puedes asignar atajos de teclado, abrir programas y cambiar las animaciones de cada tecla por separado."
+        title: "Key Configuration",
+        text: "In the right panel (Action) you can assign keyboard shortcuts, open programs and change the animations of each key separately."
     },
     {
-        title: "Sincronizar Cambios",
-        text: "Recuerda que <strong>tras cada cambio</strong> que realices en la configuración, debes pulsar el botón superior de <strong>Sincronizar Dispositivo</strong> para aplicarlos al ESP32."
+        title: "Synchronize Changes",
+        text: "Remember that <strong>after each change</strong> you make in the configuration, you must press the top <strong>Sync Device</strong> button to apply them to the ESP32."
     },
     {
-        title: "Modo Prueba",
-        text: "Arriba tienes el Modo Prueba. Si lo activas, puedes hacer clic en los botones de la pantalla virtual y arrastrar la rueda para simular su comportamiento en tiempo real."
+        title: "Test Mode",
+        text: "At the top you have Test Mode. If you activate it, you can click the virtual screen buttons and drag the wheel to simulate its behavior in real time."
     },
     {
-        title: "¡Gracias por usar BindDeck!",
-        text: "Te agradecemos mucho que hayas descargado nuestra app. Si deseas apoyar el proyecto, puedes hacerlo a través de <a href='https://github.com/sponsors/SanX18' target='_blank' style='color: var(--primary); text-decoration: underline;'>GitHub Sponsors</a>, o mediante el botón que encontrarás abajo en el pie de la aplicación."
+        title: "Thank you for using BindDeck!",
+        text: "We really appreciate that you downloaded our app. If you wish to support the project, you can do so through <a href='https://github.com/sponsors/SanX18' target='_blank' style='color: var(--primary); text-decoration: underline;'>GitHub Sponsors</a>, or via the button you will find at the bottom of the application footer."
     }
 ];
 
@@ -869,9 +869,9 @@ function showTutorialStep(step) {
     document.getElementById('tut-progress').innerText = (step + 1) + " / " + tutorialSteps.length;
     
     if (step === tutorialSteps.length - 1) {
-        document.getElementById('tut-btn-next').innerText = "Finalizar";
+        document.getElementById('tut-btn-next').innerText = "Finish";
     } else {
-        document.getElementById('tut-btn-next').innerText = "Siguiente";
+        document.getElementById('tut-btn-next').innerText = "Next";
     }
 }
 
@@ -920,7 +920,7 @@ function saveWifiConfig() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({cmd: `CFG:WIFI:${ssid}|${pwd}\n`})
     }).then(res => {
-        if(res.ok) alert("Configuración Wi-Fi enviada al dispositivo. Se reiniciará la conexión Wi-Fi.");
+        if(res.ok) alert("Wi-Fi configuration sent to the device. The Wi-Fi connection will restart.");
     });
 }
 
@@ -941,7 +941,7 @@ function uploadCustomAnim() {
     if (fileInput.files.length === 0) return;
     
     const file = fileInput.files[0];
-    status.innerText = "Subiendo " + file.name + "...";
+    status.innerText = "Uploading " + file.name + "...";
     status.style.color = "var(--text-main)";
     
     const formData = new FormData();
@@ -954,7 +954,7 @@ function uploadCustomAnim() {
     .then(res => res.json())
     .then(data => {
         if(data.success) {
-            status.innerText = "Animacion guardada!";
+            status.innerText = "Animation saved!";
             status.style.color = "var(--primary)";
         } else {
             status.innerText = "Error: " + data.error;
@@ -962,7 +962,7 @@ function uploadCustomAnim() {
         }
     })
     .catch(err => {
-        status.innerText = "Error de conexion.";
+        status.innerText = "Connection error.";
         status.style.color = "red";
     });
 }
@@ -1088,17 +1088,17 @@ const btnFlashBundled = document.getElementById('btn-flash-bundled');
 if (btnFlashBundled) {
     btnFlashBundled.addEventListener('click', async () => {
         const lang = document.getElementById('appLang').value || 'en';
-        if(!confirm(lang === 'es' ? '¿Seguro que quieres instalar el Firmware Oficial en el dispositivo conectado? Se borrará el anterior.' : 'Are you sure you want to install the Official Firmware? Device will be overwritten.')) return;
+        if(!confirm('Are you sure you want to install the Official Firmware? Device will be overwritten.')) return;
         
         const originalText = btnFlashBundled.innerText;
-        btnFlashBundled.innerText = (lang === 'es') ? 'Instalando Firmware...' : 'Installing...';
+        btnFlashBundled.innerText = 'Installing...';
         btnFlashBundled.disabled = true;
         
         try {
             const res = await fetch('/api/flash_bundled', { method: 'POST' });
             const data = await res.json();
             if (data.success) {
-                alert(lang === 'es' ? '¡Firmware instalado con éxito! El dispositivo se está reiniciando.' : 'Firmware installed successfully!');
+                alert('Firmware installed successfully! The device is restarting.');
             } else {
                 alert('Error: ' + data.error);
             }

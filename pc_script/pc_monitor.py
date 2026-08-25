@@ -72,7 +72,7 @@ UPDATE_AVAILABLE = False
 NEW_VERSION_URL = ""
 NEW_VERSION_NAME = ""
 
-# TODO: EL USUARIO DEBE CAMBIAR ESTO POR SU REPO REAL (Ej. "SanX18/BindDeck")
+# TODO: THE USER MUST CHANGE THIS TO THEIR REAL REPO (E.g., "SanX18/BindDeck")
 GITHUB_REPO = "SanX18/BindDeck"
 CURRENT_VERSION = "V1.0.0.5"
 
@@ -107,7 +107,7 @@ def load_config():
                 loaded = json.load(f)
                 config.update(loaded)
         except Exception as e:
-            print("Error cargando config:", e)
+            print("Error loading config:", e)
 
 def manage_startup(enable):
     try:
@@ -121,7 +121,7 @@ def manage_startup(enable):
             if os.path.exists(startup_path):
                 os.remove(startup_path)
     except Exception as e:
-        print("Error en startup:", e)
+        print("Error in startup:", e)
 
 def save_config():
     try:
@@ -129,7 +129,7 @@ def save_config():
             json.dump(config, f, indent=4)
         manage_startup(config.get("app", {}).get("startup", False))
     except Exception as e:
-        print("Error guardando config:", e)
+        print("Error saving config:", e)
 
 # --- KEYBOARD HOOKS ---
 last_macro_times = {}
@@ -517,12 +517,12 @@ def api_installed_apps():
                 if exe_path and exe_name.endswith('.exe') and exe_name.lower() not in seen_exes:
                     if 'system32' not in exe_path.lower() and 'windowsapps' not in exe_path.lower():
                         name = os.path.splitext(exe_name)[0].capitalize()
-                        apps.append({'name': name + ' (En ejecución)', 'path': exe_path, 'exe': exe_name, 'icon': get_icon_base64(exe_path)})
+                        apps.append({'name': name + ' (Running)', 'path': exe_path, 'exe': exe_name, 'icon': get_icon_base64(exe_path)})
                         seen_exes.add(exe_name.lower())
             except: pass
         apps.sort(key=lambda x: x['name'])
     except Exception as e:
-        print("Error en apps:", e)
+        print("Error in apps:", e)
     return jsonify(apps)
 
 @app.route('/api/audio_apps')

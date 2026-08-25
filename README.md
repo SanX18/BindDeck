@@ -2,6 +2,137 @@
   
   # BindDeck Companion for ESP32
   
+  **An open-source, customizable programmable macro controller, powered by ESP32 and an intuitive PC App.**
+
+  [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=github)](https://github.com/sponsors/SanX18)
+  [![Buy me a coffe](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=buymeacoffe)](buymeacoffee.com/sanx18)
+  [![PlatformIO](https://img.shields.io/badge/PlatformIO-Compatible-orange?logo=platformio)](https://platformio.org/)
+  [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
+</div>
+
+---
+
+If you found the project useful and want to support future designs, thank you very much for the support ❤️:
+
+## 🌟 BindDeck: Your Smart Macro Pad with ESP32 and OLED Screen
+BindDeck is a complete hardware and software ecosystem designed to boost your productivity and your setup. It turns a simple ESP32 microcontroller into a powerful custom macro keyboard, equipped with an interactive OLED screen, a rotary encoder for dial control, and mechanical buttons. It is the ideal accessory for streamers, programmers, video editors, and any technology enthusiast.
+
+🖥️ BIND DECK APP (WINDOWS) : https://github.com/SanX18/BindDeck
+
+## 🚀 What does the application do?
+BindDeck is not just a shortcut keyboard; it is an interactive tool. Everything you see on your PC screen syncs instantly with your physical device:
+
+* **Launcher and Shortcuts (8 Buttons):** Assign complex keyboard combinations (e.g. CTRL+SHIFT+S), launch your favorite programs (calc.exe, spotify.exe) or execute entire blocks of text with a single press.
+* **Infinite Rotary Encoder (KY-040):** Turn the dial left or right with stepped tactile feedback to adjust the overall volume, zoom, navigate tabs or use undo/redo. Plus, pressing it acts as an extra button!
+* **Real-Time Hardware Monitor:** Its OLED screen not only shows cute animations when you press the buttons; at rest it acts as a telemetry monitor, showing your CPU and GPU temperatures and load (usage) in real-time.
+* **Customizable Texts:** Through the app, you can write what text you want to appear on the OLED screen individually for each of the buttons.
+* **Hybrid Dual Connectivity (Wired or Wireless):** You can use it via USB cable, or 100% Wirelessly. It sends your macros to the PC using Bluetooth LE (for low battery consumption) and receives PC temperature data via Wi-Fi UDP Zero-Config.
+
+---
+
+## 🖨️ Print Profile Details
+
+This print profile is optimized and tested in **Bambu Studio** to ensure the best surface quality, strength, and ease of assembly.
+
+### ⚙️ Recommended Settings:
+
+* **Nozzle:** 0.4 mm
+* **Layer Height:** 0.20 mm (or 0.16 mm for greater detail)
+* **Wall Loops:** 2 – 3 walls
+* **Infill:** 15% – 20% (Grid / Gyroid)
+* **Supports:** Review according to plate orientation (tree supports recommended if applicable)*
+* **Bed Adhesion:** Textured PEI Plate / Smooth PEI (Clean with soap and water if necessary)
+
+### 🧵 Materials:
+
+* PLA / PLA+ (Recommended for decorative or indoor use)
+* PETG* (Recommended if mechanical strength or higher temperature resistance is required)
+
+### 📦 Profile Contents:
+
+* Organized plate with all parts ready to print directly from the **Bambu Handy** app or from the slicer.
+* Optimized geometry with no need for additional adjustments.
+
+💬 *If you liked the design, don't forget to leave your rating ⭐⭐⭐⭐⭐, photos of your result, and give it a Boost if you found it useful!*
+
+---
+
+## 🛠️ Hardware Used (BOM)
+To assemble the electronics for this case, you will need very inexpensive and accessible components.
+
+1. **Microcontroller:** ESP32 (The classic ESP32-WROOM-32 Dev Kit model is recommended).
+2. **Screen:** 0.96" I2C OLED Screen (128x64 resolution, with SSD1306 controller).
+3. **Rotary Encoder:** 1x KY-040 Module (Replaces the old potentiometer, offering infinite rotation and button/click function when pressed).
+4. **Switches / Buttons:** 8x Mechanical Switches. (Outemu Red switches were used in this project. Being linear and quiet, they offer a smooth, fast feel perfect for macros without the classic noisy "click").
+5. **ON/OFF Switch:** 1x SS-12F15
+6. **Battery and Charging (Wireless):** 1x 3.7V LiPo Battery (1400mAh)(49×34×5.4 mm) + 1x TP4056 Charger Module (USB-C).
+7. **Wiring:** Dupont cables to make the internal connections (or a custom PCB).
+8. **Extras:** Keycaps of your choice to decorate the mechanical switches and a "Knob" or cap for the encoder.
+9. **Battery Sensor:** 2x 10K Ohm Resistors (Used to create a voltage divider and allow the ESP32 to read the remaining charge percentage without burning out).
+
+---
+
+## 🔌 Physical Connection Diagram
+
+### 🔋 Power and Battery Reader (TP4056)
+* **Positive (+) Battery Wire:** Connect to the B+ pin of the TP4056.
+* **Negative (-) Battery Wire:** Connect to the B- pin of the TP4056.
+* **OUT+ (Output) of the TP4056:** Connect to the VIN or 5V pin of the ESP32.
+* **OUT- (Output) of the TP4056:** Connect to the GND pin of the ESP32.
+
+### ⚡ Battery Percentage Sensor (Voltage Divider)
+Since the ESP32 cannot read the 4.2V from the battery directly, we need to lower that voltage by half using two 10K resistors as follows:
+* Solder one 10K Resistor from the OUT+ of the TP4056 module and connect it to the GPIO 35 pin of the ESP32.
+* Solder the other 10K Resistor connecting the GPIO 35 pin to the GND pin of the ESP32. (This will divide the voltage in half, allowing BindDeck to show you an accurate battery icon on the screen).
+
+### 📺 OLED Screen (I2C Communication)
+* **VCC:** Connect to 3.3V of the ESP32.
+* **GND:** Connect to GND of the ESP32.
+* **SDA (Data Line):** Connect to GPIO 21.
+* **SCL (Clock Line):** Connect to GPIO 22.
+
+### 🎛️ Rotary Encoder (KY-040)
+* **+ (VCC):** Connect to 3.3V of the ESP32.
+* **GND:** Connect to GND of the ESP32.
+* **CLK (Clock):** Connect to GPIO 18.
+* **DT (Data):** Connect to GPIO 19.
+* **SW (Encoder Button):** Connect to GPIO 5.
+
+### ⌨️ Mechanical Switches (Outemu Red)
+Each mechanical switch has two pins. One pin from all switches must be connected to GND (Ground). The remaining pin of each switch is connected to the following ESP32 pins:
+
+* **Switch 1:** GPIO 13
+* **Switch 2:** GPIO 12
+* **Switch 3:** GPIO 14
+* **Switch 4:** GPIO 27
+* **Switch 5:** GPIO 26
+* **Switch 6:** GPIO 25
+* **Switch 7:** GPIO 33
+* **Switch 8:** GPIO 32
+
+*(💡 Tip: You can bridge or "daisy-chain" all the GND pins of the 8 switches, the screen, and the encoder with a single wire to run a single wire to the ESP32's GND pin).*
+
+---
+
+## 💻 Installation and Software All in One!
+Forget about compiling code, installing Python, or using complex programming environments. The entire process is simplified so you can manage it directly from the Windows App:
+
+1. Connect your ESP32 to the computer using a USB cable.
+2. Open the BindDeck.exe desktop application (you can download it from the project's GitHub: SanX18/BindDeck).
+3. **Install Firmware:** Inside the app, simply press the "Firmware" button and the application itself will take care of flashing (installing) the code onto your ESP32 automatically with a single click.
+4. **Administrator Permissions:** The first time you open the App, Windows will ask for Administrator permissions. ⚠️ It is essential to accept them so that the internal reader (LibreHardwareMonitor) can read the temperature of your processor (CPU) and your graphics card (GPU) to send them to the small OLED screen.
+5. **Ready to customize!** From that same application, you can configure what each button does, the action of turning the KY-040 encoder, change the screen texts, and adjust your entire ecosystem 100% visually.
+
+*(The entire system works 100% locally and privately on your network, without the need for a connection to external servers or accounts).*
+
+---
+
+## 🇪🇸 Versión en Español / Spanish Version
+
+<div align="center">
+  
+  # BindDeck Companion for ESP32
+  
   **Un controlador macro programable open-source y personalizable, potenciado por ESP32 y una intuitiva App de PC.**
 
   [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=github)](https://github.com/sponsors/SanX18)
