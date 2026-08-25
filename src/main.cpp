@@ -75,6 +75,7 @@ int encMode = 0;  // 0: Volume, 1: Vertical Arrows, 2: Horizontal Arrows
 int keyAnims[8] = {-1, -1, -1, -1, -1, -1, -1, -1}; // -1 means use global animMode
 String keyTexts[8] = {"", "", "", "", "", "", "", ""};
 int previewAnimOverride = -1;
+String customMsg = "";
 
 void saveConfig() {
   preferences.begin("binddeck", false);
@@ -239,6 +240,11 @@ void processCommand(String data) {
       drawUpdateScreen();
     } else if (data.startsWith("CMD:SIMULATE:")) {
       lastActionKeyIndex = data.substring(13).toInt();
+      currentState = STATE_ACTION;
+      actionStartTime = millis();
+    } else if (data.startsWith("CMD:MSG:")) {
+      customMsg = data.substring(8);
+      lastActionKeyIndex = -4;
       currentState = STATE_ACTION;
       actionStartTime = millis();
     } else if (data.indexOf("C:") != -1 && data.indexOf("G:") != -1) {
@@ -570,6 +576,19 @@ void drawAction() {
     display.setCursor(tx, ty);
     display.print(text);
   };
+
+  if (lastActionKeyIndex == -4) {
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    printCentered("AUDIO", 15, SSD1306_WHITE);
+    printCentered(customMsg, 35, SSD1306_WHITE);
+    display.display();
+    if (elapsed > 1500) {
+      currentState = STATE_IDLE;
+      lastEyeTime = millis();
+    }
+    return;
+  }
   
   if (currentAnim == 0) {
     int maxRadius = 40;

@@ -74,7 +74,7 @@ NEW_VERSION_NAME = ""
 
 # TODO: EL USUARIO DEBE CAMBIAR ESTO POR SU REPO REAL (Ej. "SanX18/BindDeck")
 GITHUB_REPO = "SanX18/BindDeck"
-CURRENT_VERSION = "V1.0.0.2"
+CURRENT_VERSION = "V1.0.0.3"
 
 def check_for_updates():
     global UPDATE_AVAILABLE, NEW_VERSION_URL, NEW_VERSION_NAME
@@ -207,11 +207,30 @@ def change_app_volume(app_name, up):
     except Exception as e:
         print("Error changing app volume:", e)
 
+current_audio_toggle = 0
+def toggle_audio():
+    global current_audio_toggle
+    # List of (DeviceNameForNircmd, DisplayNameForOLED)
+    # NirCmd uses the exact name of the device or connection in Windows Sound Panel
+    devices = [
+        ("Hi-MAX", "Hi-MAX"),
+        ("G435", "G435")
+    ]
+    current_audio_toggle = (current_audio_toggle + 1) % len(devices)
+    dev = devices[current_audio_toggle]
+    
+    try:
+        nircmd_path = os.path.join(sys._MEIPASS, "nircmd.exe") if getattr(sys, 'frozen', False) else os.path.abspath(os.path.join(os.path.dirname(__file__), "nircmd.exe"))
+        subprocess.run([nircmd_path, "setdefaultsounddevice", dev[0]], creationflags=subprocess.CREATE_NO_WINDOW)
+        subprocess.run([nircmd_path, "setdefaultsounddevice", dev[0], "2"], creationflags=subprocess.CREATE_NO_WINDOW) # Default Communications
+        
+        if serial_port and serial_port.is_open:
+            serial_port.write(f"CMD:MSG:{dev[1]}\n".encode())
+    except Exception as e:
+        print("Error toggling audio:", e)
+
 def on_key_event(e):
     if e.event_type == keyboard.KEY_DOWN:
-        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
-            f.write(f"[{time.time()}] KEYHOOK RECEIVED: {e.name} (scan_code: {e.scan_code})\n")
-        
         if e.name.startswith('f') and e.name[1:].isdigit():
             key_num = int(e.name[1:])
             if key_num == 23 or key_num == 24:
@@ -220,8 +239,10 @@ def on_key_event(e):
                     if app_name:
                         threading.Thread(target=change_app_volume, args=(app_name, key_num == 24), daemon=True).start()
                     return False
-                # Else let it pass or handle default if needed
-            if 13 <= key_num <= 21: # F21 is encoder button
+            if key_num == 21: # Encoder button toggle audio
+                threading.Thread(target=toggle_audio, daemon=True).start()
+                return False
+            if 13 <= key_num <= 20: 
                 action_type = config["keys"].get(str(key_num), {}).get("type", "none")
                 if action_type != "none":
                     threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
