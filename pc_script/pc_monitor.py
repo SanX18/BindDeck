@@ -74,7 +74,7 @@ NEW_VERSION_NAME = ""
 
 # TODO: EL USUARIO DEBE CAMBIAR ESTO POR SU REPO REAL (Ej. "SanX18/BindDeck")
 GITHUB_REPO = "SanX18/BindDeck"
-CURRENT_VERSION = "V1.0.0.4"
+CURRENT_VERSION = "V1.0.0.5"
 
 def check_for_updates():
     global UPDATE_AVAILABLE, NEW_VERSION_URL, NEW_VERSION_NAME
@@ -141,6 +141,10 @@ def execute_macro(key_index):
         return
     last_macro_times[key_index] = now
     
+    if key_index == 21:
+        toggle_audio()
+        return
+        
     action = config["keys"].get(str(key_index), {})
     action_type = action.get("type", "none")
     value = action.get("value", "")
