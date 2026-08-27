@@ -8,6 +8,9 @@
   [![Buy me a coffe](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=buymeacoffe)](buymeacoffee.com/sanx18)
   [![PlatformIO](https://img.shields.io/badge/PlatformIO-Compatible-orange?logo=platformio)](https://platformio.org/)
   [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
+
+  ![BindDeck Preview](binddeck-preview.png)
+
 </div>
 
 ---
@@ -139,6 +142,9 @@ Forget about compiling code, installing Python, or using complex programming env
   [![Buy me a coffe](https://img.shields.io/badge/Sponsor-%E2%9D%A4-%23ea4aaa?style=flat&logo=buymeacoffe)](buymeacoffee.com/sanx18)
   [![PlatformIO](https://img.shields.io/badge/PlatformIO-Compatible-orange?logo=platformio)](https://platformio.org/)
   [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
+
+  ![BindDeck Preview](binddeck-preview.png)
+
 </div>
 
 ---
