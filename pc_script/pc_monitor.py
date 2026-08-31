@@ -197,7 +197,22 @@ def execute_macro(key_index):
 
 def change_app_volume(app_name, up):
     try:
-        from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
+        from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume, IAudioEndpointVolume
+        from ctypes import cast, POINTER
+        from comtypes import CLSCTX_ALL
+        
+        if app_name.lower() in ["system", "system volume", "sistema"]:
+            devices = AudioUtilities.GetSpeakers()
+            interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            volume = cast(interface, POINTER(IAudioEndpointVolume))
+            current_vol = volume.GetMasterVolumeLevelScalar()
+            if up:
+                new_vol = min(1.0, current_vol + 0.04)
+            else:
+                new_vol = max(0.0, current_vol - 0.04)
+            volume.SetMasterVolumeLevelScalar(new_vol, None)
+            return
+
         sessions = AudioUtilities.GetAllSessions()
         for session in sessions:
             if session.Process and session.Process.name() and session.Process.name().lower() == app_name.lower():
@@ -491,9 +506,9 @@ def api_installed_apps():
         os.environ.get('PROGRAMDATA', 'C:\\ProgramData') + r'\Microsoft\Windows\Start Menu\Programs',
         os.environ.get('APPDATA') + r'\Microsoft\Windows\Start Menu\Programs'
     ]
-    apps = []
+    apps = [{'name': 'System Volume', 'path': 'System', 'exe': 'System', 'icon': ''}]
     seen_names = set()
-    seen_exes = set()
+    seen_exes = set(['system'])
     try:
         for p in paths:
             for root, dirs, files in os.walk(p):
@@ -527,7 +542,7 @@ def api_installed_apps():
 
 @app.route('/api/audio_apps')
 def api_audio_apps():
-    apps = []
+    apps = [{"name": "System Volume (Master)", "exe": "System", "icon": ""}]
     try:
         from pycaw.pycaw import AudioUtilities
         sessions = AudioUtilities.GetAllSessions()
