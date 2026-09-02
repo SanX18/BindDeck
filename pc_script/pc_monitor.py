@@ -9,19 +9,6 @@ def _new_popen(*args, **kwargs):
     return _old_popen(*args, **kwargs)
 subprocess.Popen = _new_popen
 
-def _spawn_detached(args):
-    """Launches a process that must survive this app closing, bypassing the
-    CREATE_NO_WINDOW-only monkeypatch above. Onefile PyInstaller builds can run
-    child processes inside a Job Object that kills them when the app exits, so
-    this also asks to break away from that job (best-effort: falls back to a
-    plain detached spawn if the OS refuses the breakaway flag)."""
-    flags = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
-    breakaway = getattr(subprocess, 'CREATE_BREAKAWAY_FROM_JOB', 0x01000000)
-    try:
-        return _old_popen(args, creationflags=flags | breakaway, close_fds=True)
-    except OSError:
-        return _old_popen(args, creationflags=flags, close_fds=True)
-
 import time
 import tempfile
 import re
@@ -95,7 +82,7 @@ APP_UPDATE_VERSION = ""
 
 # TODO: THE USER MUST CHANGE THIS TO THEIR REAL REPO (E.g., "SanX18/BindDeck")
 GITHUB_REPO = "SanX18/BindDeck"
-CURRENT_VERSION = "V1.0.0.6"
+CURRENT_VERSION = "V1.0.0.7"
 
 # Name of the app executable asset expected on each GitHub Release, alongside firmware.bin
 APP_ASSET_NAME = "BindDeck.exe"
@@ -724,9 +711,15 @@ def api_do_app_update():
     except Exception as e:
         return jsonify({"success": False, "error": f"Download failed: {e}"})
 
-    # A running .exe can't overwrite itself, so a small detached batch script
-    # waits for this process to fully exit, swaps the files, and relaunches.
+    # A running .exe can't overwrite itself, so a small batch script waits for
+    # this process to fully exit, swaps the files, and relaunches. PyInstaller's
+    # onefile bootloader runs the app inside a Job Object that kills every
+    # child/detached process it spawned once the app exits, so a plain detached
+    # Popen (even with DETACHED_PROCESS/CREATE_BREAKAWAY_FROM_JOB) still gets
+    # killed alongside it. Task Scheduler runs the script under a completely
+    # separate process tree owned by the OS, which survives that cleanup.
     pid = os.getpid()
+    task_name = f"BindDeckUpdate_{pid}"
     bat_path = os.path.join(tempfile.gettempdir(), "binddeck_updater.bat")
     bat_content = (
         "@echo off\r\n"
@@ -741,13 +734,23 @@ def api_do_app_update():
         "timeout /t 1 /nobreak >nul\r\n"
         f"move /Y \"{new_exe}\" \"{old_exe}\"\r\n"
         f"start \"\" \"{old_exe}\"\r\n"
+        f"schtasks /Delete /TN \"{task_name}\" /F\r\n"
         "del \"%~f0\"\r\n"
     )
     try:
         with open(bat_path, 'w') as f:
             f.write(bat_content)
 
-        _spawn_detached(["cmd", "/c", bat_path])
+        subprocess.run(
+            ["schtasks", "/Create", "/TN", task_name, "/TR", f'cmd /c "{bat_path}"', "/SC", "ONCE", "/ST", "23:59", "/F"],
+            check=True, capture_output=True, text=True
+        )
+        subprocess.run(
+            ["schtasks", "/Run", "/TN", task_name],
+            check=True, capture_output=True, text=True
+        )
+    except subprocess.CalledProcessError as e:
+        return jsonify({"success": False, "error": f"Could not schedule update: {e.stderr or e}"})
     except Exception as e:
         return jsonify({"success": False, "error": f"Could not schedule update: {e}"})
 
