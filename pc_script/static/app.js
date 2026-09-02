@@ -107,7 +107,12 @@ const i18n = {
         close_minimize_btn: "Minimize to Tray",
         close_quit_btn: "Quit Entirely",
         close_cancel: "Cancel",
-        test_mode: "Test Mode"
+        test_mode: "Test Mode",
+        footer_developed_by: "Developed by",
+        new_version: "New firmware version available:",
+        update_now: "Update now",
+        new_app_version: "New BindDeck app version available:",
+        app_update_now: "Update & Restart"
     },
     es: {
         app_title: "BindDeck",
@@ -181,7 +186,12 @@ const i18n = {
         close_minimize_btn: "Minimizar a la Bandeja",
         close_quit_btn: "Cerrar Completamente",
         close_cancel: "Cancelar",
-        test_mode: "Modo Prueba"
+        test_mode: "Modo Prueba",
+        footer_developed_by: "Desarrollado por",
+        new_version: "Nueva versión de firmware disponible:",
+        update_now: "Actualizar ahora",
+        new_app_version: "Nueva versión de la app BindDeck disponible:",
+        app_update_now: "Actualizar y reiniciar"
     }
 };
 
@@ -741,7 +751,7 @@ setInterval(async () => {
 
 fetchConfig();
 
-// OTA Updater logic
+// OTA Updater logic (firmware)
 setInterval(async () => {
     try {
         const res = await fetch('/api/update_check');
@@ -754,13 +764,12 @@ setInterval(async () => {
 }, 60000); // Check UI every 60s
 
 async function startUpdate() {
-    const lang = document.getElementById('appLang').value || 'en';
     const msg = "Are you sure you want to update? Device will restart.";
     if(!confirm(msg)) return;
-    
+
     const banner = document.getElementById('update-banner');
     banner.innerHTML = "Updating... DO NOT DISCONNECT. Check device screen.";
-    
+
     try {
         const res = await fetch('/api/do_update', { method: 'POST' });
         const data = await res.json();
@@ -773,6 +782,41 @@ async function startUpdate() {
         }
     } catch(e) {
         alert("Network error.");
+    }
+}
+
+// OTA Updater logic (the BindDeck app itself)
+setInterval(async () => {
+    try {
+        const res = await fetch('/api/app_update_check');
+        const data = await res.json();
+        if (data.available) {
+            document.getElementById('app-update-banner').style.display = 'block';
+            document.getElementById('app-update-version').innerText = data.version;
+        }
+    } catch(e) {}
+}, 60000); // Check UI every 60s
+
+async function startAppUpdate() {
+    const msg = "Update BindDeck now? The app will close and reopen automatically on the new version.";
+    if (!confirm(msg)) return;
+
+    const banner = document.getElementById('app-update-banner');
+    const btn = document.getElementById('btn-app-update');
+    if (btn) { btn.disabled = true; }
+    banner.innerHTML = "Downloading update... the app will restart itself in a moment.";
+
+    try {
+        const res = await fetch('/api/do_app_update', { method: 'POST' });
+        const data = await res.json();
+        if (!data.success) {
+            alert("Error: " + data.error);
+            banner.style.display = 'none';
+        }
+        // On success there is nothing else to do here: the backend downloads
+        // the new .exe, schedules the swap+relaunch and then exits this process.
+    } catch(e) {
+        // A network error here is expected once the app closes itself mid-request.
     }
 }
 
@@ -828,64 +872,241 @@ function flashFirmware() {
 }
 
 
-// TUTORIAL LOGIC
-const tutorialSteps = [
-    {
-        title: "Welcome to BindDeck!",
-        text: "Let's give you a quick tour so you can discover everything you can do with your device."
-    },
-    {
-        title: "First Step: Install Firmware",
-        text: "For the ESP32 to work with the BindDeck configuration, the first indispensable step is to <strong>install the firmware</strong> using the corresponding installation panel."
-    },
-    {
-        title: "Device Settings",
-        text: "In the left panel you can connect your ESP32, either via USB, Bluetooth or Wi-Fi, and change the behavior of the LEDs and the OLED screen."
-    },
-    {
-        title: "Key Configuration",
-        text: "In the right panel (Action) you can assign keyboard shortcuts, open programs and change the animations of each key separately."
-    },
-    {
-        title: "Synchronize Changes",
-        text: "Remember that <strong>after each change</strong> you make in the configuration, you must press the top <strong>Sync Device</strong> button to apply them to the ESP32."
-    },
-    {
-        title: "Test Mode",
-        text: "At the top you have Test Mode. If you activate it, you can click the virtual screen buttons and drag the wheel to simulate its behavior in real time."
-    },
-    {
-        title: "Thank you for using BindDeck!",
-        text: "We really appreciate that you downloaded our app. If you wish to support the project, you can do so through <a href='https://github.com/sponsors/SanX18' target='_blank' style='color: var(--primary); text-decoration: underline;'>GitHub Sponsors</a>, or via the button you will find at the bottom of the application footer."
-    }
-];
+// GUIDED TOUR (SPOTLIGHT) LOGIC
+// Each step optionally targets a real UI element (`selector`) so the tour highlights
+// it in place instead of showing a generic wall of text. `selector: null` centers
+// the card on screen with a full dim background (used for the intro/outro steps).
+const tourSteps = {
+    en: [
+        {
+            selector: null,
+            title: "Welcome to BindDeck!",
+            text: "Let's give you a guided tour of the app. We'll walk through it step by step so you know exactly where everything is."
+        },
+        {
+            selector: "#btn-flash-bundled",
+            placement: "right",
+            title: "1. Install the firmware",
+            text: "First things first: connect your ESP32 via USB and click here to flash the official firmware onto it. This is the only required step before anything else works."
+        },
+        {
+            selector: ".left-panel",
+            placement: "right",
+            title: "2. Device Settings",
+            text: "Here you connect your ESP32 (USB, Bluetooth or Wi-Fi) and tweak global behavior: OLED animation, brightness, the encoder action and LEDs."
+        },
+        {
+            selector: ".device-mockup",
+            placement: "top",
+            title: "3. Pick a key to configure",
+            text: "This mockup mirrors your physical device. Click any switch (SW1-SW8) or the encoder to select it and configure what it does."
+        },
+        {
+            selector: "#config-panel",
+            placement: "left",
+            title: "4. Assign an action",
+            text: "Once a key is selected, this panel lights up. Choose whether it opens an app, sends a shortcut or types text, and optionally set a custom on-screen text."
+        },
+        {
+            selector: "#btn-sync-header",
+            placement: "bottom",
+            title: "5. Don't forget to Sync",
+            text: "After changing anything, press this button to push the configuration to your ESP32. Without syncing, your device keeps the old settings."
+        },
+        {
+            selector: ".test-mode-toggle",
+            placement: "bottom",
+            title: "6. Try it without hardware",
+            text: "Turn on Test Mode to click the virtual buttons and drag the virtual encoder, simulating your device even if it's not connected yet."
+        },
+        {
+            selector: ".social-links",
+            placement: "top",
+            title: "Thank you for using BindDeck!",
+            text: "We really appreciate you trying the app. You can always reopen this tour from the (?) icon in the header. If you'd like to support the project, these icons are the place to do it."
+        }
+    ],
+    es: [
+        {
+            selector: null,
+            title: "¡Bienvenido a BindDeck!",
+            text: "Vamos a hacer un tour guiado por la app, paso a paso, para que sepas exactamente dónde está cada cosa."
+        },
+        {
+            selector: "#btn-flash-bundled",
+            placement: "right",
+            title: "1. Instala el firmware",
+            text: "Lo primero: conecta tu ESP32 por USB y pulsa aquí para flashear el firmware oficial. Es el único paso imprescindible antes de que todo lo demás funcione."
+        },
+        {
+            selector: ".left-panel",
+            placement: "right",
+            title: "2. Ajustes del dispositivo",
+            text: "Aquí conectas tu ESP32 (USB, Bluetooth o Wi-Fi) y ajustas el comportamiento global: animación OLED, brillo, acción del encoder y LEDs."
+        },
+        {
+            selector: ".device-mockup",
+            placement: "top",
+            title: "3. Elige una tecla para configurar",
+            text: "Esta maqueta representa tu dispositivo físico. Haz clic en cualquier switch (SW1-SW8) o en el encoder para seleccionarlo y configurar qué hace."
+        },
+        {
+            selector: "#config-panel",
+            placement: "left",
+            title: "4. Asigna una acción",
+            text: "Al seleccionar una tecla, este panel se activa. Elige si abre una app, envía un atajo o escribe texto, y opcionalmente define un texto personalizado en pantalla."
+        },
+        {
+            selector: "#btn-sync-header",
+            placement: "bottom",
+            title: "5. No olvides Sincronizar",
+            text: "Tras cualquier cambio, pulsa este botón para enviar la configuración a tu ESP32. Si no sincronizas, el dispositivo mantiene los ajustes anteriores."
+        },
+        {
+            selector: ".test-mode-toggle",
+            placement: "bottom",
+            title: "6. Pruébalo sin hardware",
+            text: "Activa el Modo Prueba para pulsar los botones virtuales y arrastrar el encoder virtual, simulando tu dispositivo aunque aún no esté conectado."
+        },
+        {
+            selector: ".social-links",
+            placement: "top",
+            title: "¡Gracias por usar BindDeck!",
+            text: "Agradecemos mucho que pruebes la app. Puedes reabrir este tour desde el icono (?) de la cabecera. Si quieres apoyar el proyecto, estos iconos son el lugar para hacerlo."
+        }
+    ]
+};
 
 let currentTutorialStep = 0;
+let tourResizeHandler = null;
+
+function getTourLang() {
+    const el = document.getElementById('appLang');
+    return (el && el.value) || (config.app && config.app.lang) || 'en';
+}
+
+function getTourSteps() {
+    return tourSteps[getTourLang()] || tourSteps.en;
+}
+
+function positionTourCard(step) {
+    const steps = getTourSteps();
+    const data = steps[step];
+    const overlay = document.getElementById('tutorial-modal');
+    const highlight = document.getElementById('tour-highlight');
+    const card = document.getElementById('tour-card');
+    const target = data.selector ? document.querySelector(data.selector) : null;
+
+    if (!target) {
+        highlight.style.display = 'none';
+        overlay.classList.add('tour-dim-full');
+        card.style.top = '50%';
+        card.style.left = '50%';
+        card.style.transform = 'translate(-50%, -50%)';
+        return;
+    }
+
+    overlay.classList.remove('tour-dim-full');
+    card.style.transform = 'none';
+
+    const rect = target.getBoundingClientRect();
+    const pad = 8;
+    highlight.style.display = 'block';
+    highlight.style.top = (rect.top - pad) + 'px';
+    highlight.style.left = (rect.left - pad) + 'px';
+    highlight.style.width = (rect.width + pad * 2) + 'px';
+    highlight.style.height = (rect.height + pad * 2) + 'px';
+
+    const margin = 18;
+    const cardW = card.offsetWidth || 320;
+    const cardH = card.offsetHeight || 200;
+    let top, left;
+
+    switch (data.placement) {
+        case 'right':
+            left = rect.right + margin;
+            top = rect.top;
+            break;
+        case 'left':
+            left = rect.left - margin - cardW;
+            top = rect.top;
+            break;
+        case 'top':
+            left = rect.left;
+            top = rect.top - margin - cardH;
+            break;
+        case 'bottom':
+        default:
+            left = rect.right - cardW;
+            top = rect.bottom + margin;
+            break;
+    }
+
+    const vw = window.innerWidth, vh = window.innerHeight;
+    left = Math.max(12, Math.min(left, vw - cardW - 12));
+    top = Math.max(12, Math.min(top, vh - cardH - 12));
+
+    card.style.left = left + 'px';
+    card.style.top = top + 'px';
+}
 
 function showTutorialStep(step) {
-    document.getElementById('tutorial-modal').style.display = 'flex';
-    document.getElementById('tut-title').innerText = tutorialSteps[step].title;
-    document.getElementById('tut-text').innerHTML = tutorialSteps[step].text;
-    document.getElementById('tut-progress').innerText = (step + 1) + " / " + tutorialSteps.length;
-    
-    if (step === tutorialSteps.length - 1) {
-        document.getElementById('tut-btn-next').innerText = "Finish";
-    } else {
-        document.getElementById('tut-btn-next').innerText = "Next";
+    const steps = getTourSteps();
+    if (step < 0 || step >= steps.length) return;
+
+    const overlay = document.getElementById('tutorial-modal');
+    overlay.style.display = 'block';
+    document.getElementById('tour-step-badge').innerText = step + 1;
+    document.getElementById('tut-title').innerText = steps[step].title;
+    document.getElementById('tut-text').innerHTML = steps[step].text;
+    document.getElementById('tut-progress').innerText = (step + 1) + " / " + steps.length;
+
+    document.getElementById('tut-btn-back').style.display = step === 0 ? 'none' : 'inline-block';
+    document.getElementById('tut-btn-next').innerText = (step === steps.length - 1)
+        ? (getTourLang() === 'es' ? 'Finalizar' : 'Finish')
+        : (getTourLang() === 'es' ? 'Siguiente' : 'Next');
+
+    const dots = document.getElementById('tour-dots');
+    dots.innerHTML = '';
+    steps.forEach((_, i) => {
+        const dot = document.createElement('span');
+        if (i === step) dot.className = 'active';
+        dots.appendChild(dot);
+    });
+
+    // Wait a frame so the card has rendered at its final size before measuring it.
+    requestAnimationFrame(() => positionTourCard(step));
+
+    if (!tourResizeHandler) {
+        tourResizeHandler = () => positionTourCard(currentTutorialStep);
+        window.addEventListener('resize', tourResizeHandler);
+        window.addEventListener('scroll', tourResizeHandler, true);
     }
 }
 
 function nextTutorialStep() {
     currentTutorialStep++;
-    if (currentTutorialStep >= tutorialSteps.length) {
+    if (currentTutorialStep >= getTourSteps().length) {
         closeTutorial();
     } else {
         showTutorialStep(currentTutorialStep);
     }
 }
 
+function prevTutorialStep() {
+    if (currentTutorialStep > 0) {
+        currentTutorialStep--;
+        showTutorialStep(currentTutorialStep);
+    }
+}
+
 function closeTutorial() {
     document.getElementById('tutorial-modal').style.display = 'none';
+    if (tourResizeHandler) {
+        window.removeEventListener('resize', tourResizeHandler);
+        window.removeEventListener('scroll', tourResizeHandler, true);
+        tourResizeHandler = null;
+    }
     if (!config.app) config.app = {};
     config.app.tutorialSeen = true;
     try {
@@ -900,14 +1121,13 @@ function closeTutorial() {
 // Auto-show tutorial on first run
 window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('tut-btn-next').addEventListener('click', nextTutorialStep);
+    document.getElementById('tut-btn-back').addEventListener('click', prevTutorialStep);
     document.getElementById('tut-btn-skip').addEventListener('click', closeTutorial);
 
     document.getElementById('btn-tutorial-header').addEventListener('click', () => {
         currentTutorialStep = 0;
         showTutorialStep(0);
     });
-
-
 });
 
 function saveWifiConfig() {

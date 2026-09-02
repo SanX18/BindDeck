@@ -9,7 +9,22 @@ def _new_popen(*args, **kwargs):
     return _old_popen(*args, **kwargs)
 subprocess.Popen = _new_popen
 
+def _spawn_detached(args):
+    """Launches a process that must survive this app closing, bypassing the
+    CREATE_NO_WINDOW-only monkeypatch above. Onefile PyInstaller builds can run
+    child processes inside a Job Object that kills them when the app exits, so
+    this also asks to break away from that job (best-effort: falls back to a
+    plain detached spawn if the OS refuses the breakaway flag)."""
+    flags = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
+    breakaway = getattr(subprocess, 'CREATE_BREAKAWAY_FROM_JOB', 0x01000000)
+    try:
+        return _old_popen(args, creationflags=flags | breakaway, close_fds=True)
+    except OSError:
+        return _old_popen(args, creationflags=flags, close_fds=True)
+
 import time
+import tempfile
+import re
 
 import serial
 import serial.tools.list_ports
@@ -68,30 +83,75 @@ config = {
 }
 
 # --- OTA UPDATER ---
+# Firmware (ESP32) update state
 UPDATE_AVAILABLE = False
 NEW_VERSION_URL = ""
 NEW_VERSION_NAME = ""
 
+# Desktop app (.exe) self-update state
+APP_UPDATE_AVAILABLE = False
+APP_UPDATE_URL = ""
+APP_UPDATE_VERSION = ""
+
 # TODO: THE USER MUST CHANGE THIS TO THEIR REAL REPO (E.g., "SanX18/BindDeck")
 GITHUB_REPO = "SanX18/BindDeck"
-CURRENT_VERSION = "V1.0.0.5"
+CURRENT_VERSION = "V1.0.0.6"
+
+# Name of the app executable asset expected on each GitHub Release, alongside firmware.bin
+APP_ASSET_NAME = "BindDeck.exe"
+
+def fetch_latest_release():
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req, timeout=10) as response:
+        return json.loads(response.read().decode())
+
+def parse_version_tuple(version_str):
+    """Pulls the numeric x.y.z(.w) part out of a version/tag string, ignoring
+    any prefix, so tags like 'BindDeck_V1.0.0.5' and 'V1.0.0.5' compare equal
+    instead of looking like different versions just because of the prefix."""
+    match = re.search(r'(\d+(?:\.\d+)+)', version_str or "")
+    if not match:
+        return None
+    return tuple(int(part) for part in match.group(1).split('.'))
+
+def is_newer_version(remote_tag, current):
+    remote_v = parse_version_tuple(remote_tag)
+    current_v = parse_version_tuple(current)
+    if remote_v is None or current_v is None:
+        # Can't parse either as a version number, fall back to a plain diff
+        # so we still surface unexpected tags instead of silently ignoring them.
+        return bool(remote_tag) and remote_tag != current
+    return remote_v > current_v
+
+def apply_release_data(data):
+    """Checks a GitHub release payload for newer firmware and/or app assets
+    and updates the matching global update-state flags. Returns True if the
+    release is newer than CURRENT_VERSION (regardless of which assets exist)."""
+    global UPDATE_AVAILABLE, NEW_VERSION_URL, NEW_VERSION_NAME
+    global APP_UPDATE_AVAILABLE, APP_UPDATE_URL, APP_UPDATE_VERSION
+
+    latest_version = data.get("tag_name", "")
+    if not is_newer_version(latest_version, CURRENT_VERSION):
+        return False
+
+    for asset in data.get("assets", []):
+        name = asset.get("name", "")
+        if name == "firmware.bin":
+            NEW_VERSION_URL = asset.get("browser_download_url")
+            NEW_VERSION_NAME = latest_version
+            UPDATE_AVAILABLE = True
+        elif name.lower() == APP_ASSET_NAME.lower():
+            APP_UPDATE_URL = asset.get("browser_download_url")
+            APP_UPDATE_VERSION = latest_version
+            APP_UPDATE_AVAILABLE = True
+
+    return True
 
 def check_for_updates():
-    global UPDATE_AVAILABLE, NEW_VERSION_URL, NEW_VERSION_NAME
     while True:
         try:
-            url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
-                data = json.loads(response.read().decode())
-                latest_version = data.get("tag_name", "")
-                if latest_version and latest_version != CURRENT_VERSION:
-                    for asset in data.get("assets", []):
-                        if asset.get("name") == "firmware.bin":
-                            NEW_VERSION_URL = asset.get("browser_download_url")
-                            NEW_VERSION_NAME = latest_version
-                            UPDATE_AVAILABLE = True
-                            break
+            apply_release_data(fetch_latest_release())
         except Exception:
             pass
         time.sleep(86400) # Check once a day
@@ -151,12 +211,6 @@ def execute_macro(key_index):
     anim = action.get("anim", -1)
     
     try:
-        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
-            f.write(f"[{time.time()}] execute_macro called for key {key_index}. Type: {action_type}, Value: {value}, Anim: {anim}\n")
-    except:
-        pass
-    
-    try:
         if int(anim) != -1 and window_ref:
             window_ref.evaluate_js(f"if(typeof playOledPreview === 'function') playOledPreview({anim}, true);")
     except Exception as e:
@@ -178,8 +232,7 @@ def execute_macro(key_index):
             time.sleep(0.05)
             for k in reversed(keys): keyboard.release(k)
         except Exception as e:
-            with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
-                f.write(f"Error shortcut: {e}\n")
+            print(f"Error shortcut: {e}")
     elif action_type == "text" and value:
         try:
             keyboard.write(value)
@@ -191,8 +244,7 @@ def execute_macro(key_index):
             time.sleep(0.05)
             keyboard.release(f"f{key_index}")
         except Exception as e:
-            with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
-                f.write(f"Error none: {e}\n")
+            print(f"Error none: {e}")
 
 
 def change_app_volume(app_name, up):
@@ -594,7 +646,9 @@ def check_bt_status_loop():
         except Exception:
             app.bt_connected = False
             app.bt_battery = None
-        time.sleep(5)
+        # Spawning powershell.exe is expensive (cold start), and BT connection
+        # state doesn't need sub-5s freshness, so this is polled sparingly.
+        time.sleep(15)
 
 threading.Thread(target=check_bt_status_loop, daemon=True).start()
 
@@ -638,23 +692,72 @@ def api_update_check():
 
 @app.route('/api/force_update_check', methods=['POST'])
 def api_force_update_check():
-    global UPDATE_AVAILABLE, NEW_VERSION_URL, NEW_VERSION_NAME
     try:
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode())
-            latest_version = data.get("tag_name", "")
-            if latest_version and latest_version != CURRENT_VERSION:
-                for asset in data.get("assets", []):
-                    if asset.get("name") == "firmware.bin":
-                        NEW_VERSION_URL = asset.get("browser_download_url")
-                        NEW_VERSION_NAME = latest_version
-                        UPDATE_AVAILABLE = True
-                        return jsonify({"available": True, "version": latest_version})
-        return jsonify({"available": False, "version": CURRENT_VERSION})
+        data = fetch_latest_release()
+        is_newer = apply_release_data(data)
+        return jsonify({
+            "available": is_newer,
+            "version": data.get("tag_name", "") if is_newer else CURRENT_VERSION,
+            "firmware_available": UPDATE_AVAILABLE,
+            "app_available": APP_UPDATE_AVAILABLE
+        })
     except Exception as e:
         return jsonify({"available": False, "error": str(e)})
+
+@app.route('/api/app_update_check')
+def api_app_update_check():
+    return jsonify({"available": APP_UPDATE_AVAILABLE, "version": APP_UPDATE_VERSION})
+
+@app.route('/api/do_app_update', methods=['POST'])
+def api_do_app_update():
+    if not APP_UPDATE_AVAILABLE or not APP_UPDATE_URL:
+        return jsonify({"success": False, "error": "No app update available"})
+
+    if not getattr(sys, 'frozen', False):
+        return jsonify({"success": False, "error": "Self-update only works on the packaged .exe, not when running from source"})
+
+    old_exe = sys.executable
+    new_exe = old_exe + ".update"
+
+    try:
+        urllib.request.urlretrieve(APP_UPDATE_URL, new_exe)
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Download failed: {e}"})
+
+    # A running .exe can't overwrite itself, so a small detached batch script
+    # waits for this process to fully exit, swaps the files, and relaunches.
+    pid = os.getpid()
+    bat_path = os.path.join(tempfile.gettempdir(), "binddeck_updater.bat")
+    bat_content = (
+        "@echo off\r\n"
+        "setlocal\r\n"
+        f"set PID={pid}\r\n"
+        ":waitloop\r\n"
+        "tasklist /FI \"PID eq %PID%\" | find \"%PID%\" >nul\r\n"
+        "if not errorlevel 1 (\r\n"
+        "    timeout /t 1 /nobreak >nul\r\n"
+        "    goto waitloop\r\n"
+        ")\r\n"
+        "timeout /t 1 /nobreak >nul\r\n"
+        f"move /Y \"{new_exe}\" \"{old_exe}\"\r\n"
+        f"start \"\" \"{old_exe}\"\r\n"
+        "del \"%~f0\"\r\n"
+    )
+    try:
+        with open(bat_path, 'w') as f:
+            f.write(bat_content)
+
+        _spawn_detached(["cmd", "/c", bat_path])
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Could not schedule update: {e}"})
+
+    def delayed_exit():
+        time.sleep(0.5)
+        kill_lhm()
+        os._exit(0)
+    threading.Thread(target=delayed_exit, daemon=True).start()
+
+    return jsonify({"success": True})
 
 @app.route('/api/do_update', methods=['POST'])
 def api_do_update():
@@ -695,9 +798,11 @@ def find_esp32_port():
             return port.device
     return None
 
+lhm_session = requests.Session()
+
 def get_lhm_cpu_temp():
     try:
-        response = requests.get("http://127.0.0.1:8085/data.json", timeout=1)
+        response = lhm_session.get("http://127.0.0.1:8085/data.json", timeout=1)
         data = response.json()
         def find_temp(node, is_cpu=False):
             if isinstance(node, dict):
@@ -733,8 +838,6 @@ def serial_read_loop():
                     try:
                         idx = int(line.split(":")[1])
                         key_num = idx + 13
-                        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
-                            f.write(f"[{time.time()}] SERIAL READ BTN: {idx} (key_num={key_num})\n")
                         threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
                     except:
                         pass
@@ -768,8 +871,6 @@ def udp_listen_loop():
     try:
         listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         listen_sock.bind(('0.0.0.0', 4211))
-        with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
-            f.write(f"[{time.time()}] UDP Listener Started on port 4211\n")
         while True:
             data, addr = listen_sock.recvfrom(1024)
             line = data.decode('utf-8', errors='ignore').strip()
@@ -777,8 +878,6 @@ def udp_listen_loop():
                 try:
                     idx = int(line.split(":")[1])
                     key_num = idx + 13
-                    with open(os.path.join(os.path.expanduser("~"), "binddeck_debug.txt"), "a") as f:
-                        f.write(f"[{time.time()}] UDP READ BTN: {idx} (key_num={key_num})\n")
                     threading.Thread(target=execute_macro, args=(key_num,), daemon=True).start()
                 except:
                     pass
@@ -799,11 +898,63 @@ def udp_listen_loop():
     except Exception as e:
         print("UDP Listen Error:", e)
 
+# GPUtil shells out to nvidia-smi.exe on every call (it spawns a fresh process,
+# there is no persistent handle). Polling it once a second means launching a new
+# process 60 times a minute forever, so it gets its own slower-paced thread and
+# hardware_loop just reads the cached result.
+gpu_usage_cached = 0.0
+gpu_temp_cached = 0.0
+GPU_POLL_INTERVAL = 3
+
+def gpu_poll_loop():
+    global gpu_usage_cached, gpu_temp_cached
+    while True:
+        try:
+            gpus = GPUtil.getGPUs()
+            if len(gpus) > 0:
+                gpu_usage_cached = gpus[0].load * 100
+                gpu_temp_cached = gpus[0].temperature
+            else:
+                gpu_usage_cached = 0.0
+                gpu_temp_cached = 0.0
+        except Exception:
+            gpu_usage_cached = 0.0
+            gpu_temp_cached = 0.0
+        time.sleep(GPU_POLL_INTERVAL)
+
+# The set of local IPv4 broadcast addresses barely ever changes while the app is
+# running, so it is recomputed on a TTL instead of on every second-long tick.
+_broadcast_ips_cache = []
+_broadcast_ips_cache_time = 0
+BROADCAST_CACHE_TTL = 30
+
+def get_broadcast_ips():
+    global _broadcast_ips_cache, _broadcast_ips_cache_time
+    now = time.time()
+    if now - _broadcast_ips_cache_time < BROADCAST_CACHE_TTL:
+        return _broadcast_ips_cache
+
+    ips = []
+    for interface, snics in psutil.net_if_addrs().items():
+        for snic in snics:
+            if snic.family == socket.AF_INET and snic.netmask and snic.address != '127.0.0.1':
+                try:
+                    ip_parts = snic.address.split('.')
+                    mask_parts = snic.netmask.split('.')
+                    bcast_parts = [str(int(ip_parts[i]) | (255 - int(mask_parts[i]))) for i in range(4)]
+                    ips.append('.'.join(bcast_parts))
+                except:
+                    pass
+
+    _broadcast_ips_cache = ips
+    _broadcast_ips_cache_time = now
+    return ips
+
 def hardware_loop():
     global serial_port
     while True:
         conn_type = config.get("app", {}).get("connection_type", "usb")
-        
+
         if conn_type != "wifi":
             if not serial_port or not serial_port.is_open:
                 port = find_esp32_port()
@@ -812,49 +963,33 @@ def hardware_loop():
                         serial_port = serial.Serial(port, 115200, timeout=1)
                     except:
                         serial_port = None
-        
+
         cpu_usage = psutil.cpu_percent(interval=None)
         cpu_temp = get_lhm_cpu_temp()
-        
-        try:
-            gpus = GPUtil.getGPUs()
-            gpu_usage = 0.0
-            gpu_temp = 0.0
-            if len(gpus) > 0:
-                gpu_usage = gpus[0].load * 100
-                gpu_temp = gpus[0].temperature
-        except Exception:
-            gpu_usage = 0
-            gpu_temp = 0
-            
+        gpu_usage = gpu_usage_cached
+        gpu_temp = gpu_temp_cached
+
         if SIMULATE_TEMP:
             cpu_temp = 88
             gpu_temp = 88
-            
+
         data_str = f"C:{int(cpu_temp)},U:{int(cpu_usage)},G:{int(gpu_temp)},V:{int(gpu_usage)}\n"
-        
+
         # Zero-Config Wi-Fi Broadcast to all interfaces
         try:
             udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             # Standard 255.255.255.255
             udp_socket.sendto(data_str.encode('utf-8'), ('255.255.255.255', 4210))
-            
+
             # Subnet directed broadcasts
-            for interface, snics in psutil.net_if_addrs().items():
-                for snic in snics:
-                    if snic.family == socket.AF_INET and snic.netmask and snic.address != '127.0.0.1':
-                        try:
-                            # Calculate broadcast address
-                            ip_parts = snic.address.split('.')
-                            mask_parts = snic.netmask.split('.')
-                            bcast_parts = [str(int(ip_parts[i]) | (255 - int(mask_parts[i]))) for i in range(4)]
-                            bcast_ip = '.'.join(bcast_parts)
-                            udp_socket.sendto(data_str.encode('utf-8'), (bcast_ip, 4210))
-                        except:
-                            pass
+            for bcast_ip in get_broadcast_ips():
+                try:
+                    udp_socket.sendto(data_str.encode('utf-8'), (bcast_ip, 4210))
+                except:
+                    pass
         except:
             pass
-        
+
         if conn_type == "usb":
             if serial_port and serial_port.is_open:
                 try:
@@ -902,6 +1037,7 @@ def main():
     
     # Arrancar monitor de hardware en background
     threading.Thread(target=hardware_loop, daemon=True).start()
+    threading.Thread(target=gpu_poll_loop, daemon=True).start()
     threading.Thread(target=serial_read_loop, daemon=True).start()
     threading.Thread(target=udp_listen_loop, daemon=True).start()
     

@@ -47,10 +47,15 @@
     <div class="main-layout">
     
         <div id="update-banner" style="display:none; background: var(--primary); color: white; padding: 10px; text-align: center; border-radius: 8px; margin: 10px;">
-            <span data-i18n="new_version">New version available:</span> <span id="update-version" style="font-weight: bold;"></span>
+            <span data-i18n="new_version">New firmware version available:</span> <span id="update-version" style="font-weight: bold;"></span>
             <button onclick="startUpdate()" style="margin-left: 15px; padding: 5px 15px; background: white; color: var(--primary); border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" data-i18n="update_now">Update now</button>
         </div>
-        
+
+        <div id="app-update-banner" style="display:none; background: #22c55e; color: white; padding: 10px; text-align: center; border-radius: 8px; margin: 10px;">
+            <span data-i18n="new_app_version">New BindDeck app version available:</span> <span id="app-update-version" style="font-weight: bold;"></span>
+            <button id="btn-app-update" onclick="startAppUpdate()" style="margin-left: 15px; padding: 5px 15px; background: white; color: #16a34a; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" data-i18n="app_update_now">Update &amp; Restart</button>
+        </div>
+
         <!-- LEFT PANEL: Global Settings -->
         <div class="panel left-panel" style="position: relative;">
             <div class="drag-handle" style="position: absolute; top: 15px; right: 15px; cursor: grab; color: var(--text-muted); opacity: 0.5; font-size: 1.2rem; user-select: none;">&#8942;&#8942;</div>
@@ -368,31 +373,44 @@
         </div>
     </div>
 
-    <footer style="text-align: center; margin-top: 1rem; padding-bottom: 1rem; color: var(--text-muted); font-size: 0.75rem; opacity: 0.7;">
-        <p style="margin: 0;">
-            Developed by <strong>Marc Sancho Pastor</strong> (<a href="https://github.com/SanX18" style="color: var(--primary); text-decoration: none;" target="_blank">Git: @SanX18</a>)
-            <span style="margin: 0 8px; opacity: 0.5;">|</span>
-            <a href="https://github.com/sponsors/SanX18" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; color: #ea4aaa; text-decoration: none; font-weight: 600; transition: opacity 0.2s;">
-                <svg style="width: 12px; height: 12px; margin-right: 4px; fill: currentColor;" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.25 2.5c-1.336 0-2.75 1.164-2.75 3 0 2.15 1.58 4.144 3.365 5.682A20.565 20.565 0 008 13.393a20.561 20.561 0 003.135-2.211C12.92 9.644 14.5 7.65 14.5 5.5c0-1.836-1.414-3-2.75-3-1.373 0-2.609.986-3.029 2.456a.75.75 0 01-1.442 0C6.859 3.486 5.623 2.5 4.25 2.5zM8 14.25l-.345.666-.002-.001-.006-.003-.018-.01a7.643 7.643 0 01-.31-.17 22.075 22.075 0 01-3.434-2.414C2.045 10.731 0 8.35 0 5.5 0 2.836 2.086 1 4.25 1 5.797 1 7.153 1.802 8 3.02 8.847 1.802 10.203 1 11.75 1 13.914 1 16 2.836 16 5.5c0 2.85-2.045 5.231-3.885 6.818a22.08 22.08 0 01-3.744 2.584l-.018.01-.006.003h-.002L8 14.25z"></path></svg>
-                Sponsor
-            </a>
+    <footer class="app-footer">
+        <p class="footer-credit">
+            <span data-i18n="footer_developed_by">Developed by</span> <strong>Marc Sancho Pastor</strong>
         </p>
+        <div class="social-links">
+            <a href="https://github.com/SanX18" target="_blank" rel="noopener" class="social-icon" title="GitHub" aria-label="GitHub">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            </a>
+            <a href="https://makerworld.com/en/@SanX18" target="_blank" rel="noopener" class="social-icon" title="Makerworld" aria-label="Makerworld">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.2 14 4.6v6.8L8 14.8 2 11.4V4.6L8 1.2Z"/><path d="M2 4.6 8 8l6-3.4"/><path d="M8 8v6.8"/></svg>
+            </a>
+            <a href="https://github.com/sponsors/SanX18" target="_blank" rel="noopener" class="social-icon sponsor-icon" title="GitHub Sponsors" aria-label="GitHub Sponsors">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M4.25 2.5c-1.336 0-2.75 1.164-2.75 3 0 2.15 1.58 4.144 3.365 5.682A20.565 20.565 0 008 13.393a20.561 20.561 0 003.135-2.211C12.92 9.644 14.5 7.65 14.5 5.5c0-1.836-1.414-3-2.75-3-1.373 0-2.609.986-3.029 2.456a.75.75 0 01-1.442 0C6.859 3.486 5.623 2.5 4.25 2.5zM8 14.25l-.345.666-.002-.001-.006-.003-.018-.01a7.643 7.643 0 01-.31-.17 22.075 22.075 0 01-3.434-2.414C2.045 10.731 0 8.35 0 5.5 0 2.836 2.086 1 4.25 1 5.797 1 7.153 1.802 8 3.02 8.847 1.802 10.203 1 11.75 1 13.914 1 16 2.836 16 5.5c0 2.85-2.045 5.231-3.885 6.818a22.08 22.08 0 01-3.744 2.584l-.018.01-.006.003h-.002L8 14.25z"></path></svg>
+            </a>
+            <a href="https://buymeacoffee.com/sanx18" target="_blank" rel="noopener" class="social-icon coffee-icon" title="Buy Me a Coffee" aria-label="Buy Me a Coffee">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5c0-.28.22-.5.5-.5h9a.5.5 0 01.5.5V4h.5A2.5 2.5 0 0115 6.5C15 7.88 13.88 9 12.5 9H12c-.24 1.86-1.36 3.28-2.86 3.82.03.2.05.4.05.6a1.5 1.5 0 01-1.5 1.5H5a1.5 1.5 0 01-1.5-1.5c0-1.9-.32-3.63-.85-5.03C2.24 7.34 2 6.02 2 4.5v-2Zm10 5V5h.5c.83 0 1.5.67 1.5 1.5S13.33 8 12.5 8H12v-.5Z"/></svg>
+            </a>
+        </div>
     </footer>
 
     <script src="/static/app.js?v=2"></script>
 
-    <!-- Tutorial Modal -->
-    <div id="tutorial-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h2 id="tut-title" style="margin-bottom: 15px;">Welcome to BindDeck!</h2>
-            <p id="tut-text" style="color: var(--text-muted); margin-bottom: 20px; min-height: 60px;">
+    <!-- Guided Tour Overlay -->
+    <div id="tutorial-modal" class="tour-overlay" style="display: none;">
+        <div class="tour-highlight" id="tour-highlight"></div>
+        <div class="tour-card" id="tour-card">
+            <span class="tour-step-badge" id="tour-step-badge">1</span>
+            <h2 id="tut-title">Welcome to BindDeck!</h2>
+            <p id="tut-text">
                 Let's give you a quick tour so you can discover everything you can do with your device.
             </p>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="tut-progress" style="font-size: 12px; color: var(--text-muted);">1 / 4</span>
-                <div style="display: flex; gap: 10px;">
-                    <button id="tut-btn-skip" class="btn-secondary" style="width: auto; padding: 0.6rem 1.2rem;">Skip</button>
-                    <button id="tut-btn-next" class="btn-primary" style="width: auto; margin-top: 0; padding: 0.6rem 1.2rem;">Next</button>
+            <div class="tour-dots" id="tour-dots"></div>
+            <div class="tour-card-footer">
+                <span id="tut-progress" class="tour-progress-text">1 / 4</span>
+                <div class="tour-btns">
+                    <button id="tut-btn-skip" class="btn-secondary">Skip</button>
+                    <button id="tut-btn-back" class="btn-secondary" style="display:none;">Back</button>
+                    <button id="tut-btn-next" class="btn-primary">Next</button>
                 </div>
             </div>
         </div>
