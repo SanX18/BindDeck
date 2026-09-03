@@ -82,6 +82,7 @@ const i18n = {
         led_wave: "Wave on Press",
         settings_title: "App Settings",
         theme: "Theme",
+        theme_system: "System",
         dark: "Dark",
         light: "Light",
         language: "Language",
@@ -161,6 +162,7 @@ const i18n = {
         led_wave: "Onda al Pulsar",
         settings_title: "Ajustes de la App",
         theme: "Tema",
+        theme_system: "Según el sistema",
         dark: "Oscuro",
         light: "Claro",
         language: "Idioma",
@@ -208,6 +210,28 @@ function applyLanguage(lang) {
         syncBtn.title = dict['sync_tooltip'];
     }
 }
+
+// THEME (dark / light / system)
+const systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+let currentThemeSetting = 'dark';
+
+function applyResolvedTheme(isDark) {
+    document.body.classList.toggle('light-theme', !isDark);
+}
+
+function applyTheme(theme) {
+    currentThemeSetting = theme;
+    if (theme === 'system') {
+        applyResolvedTheme(systemThemeQuery.matches);
+    } else {
+        applyResolvedTheme(theme !== 'light');
+    }
+}
+
+// While "system" is selected, follow OS theme changes live without needing a reload/save.
+systemThemeQuery.addEventListener('change', (e) => {
+    if (currentThemeSetting === 'system') applyResolvedTheme(e.matches);
+});
 
 function updatePresets(type) {
     const btnBrowse = document.getElementById('btn-browse');
@@ -292,7 +316,7 @@ async function fetchConfig() {
             document.getElementById('appStartup').checked = config.app.startup || false;
             document.getElementById('closeMode').value = config.app.closeMode || 'ask';
             
-            if (config.app.theme === 'light') document.body.classList.add('light-theme');
+            applyTheme(config.app.theme || 'dark');
             applyLanguage(config.app.lang || 'en');
             
             if (config.app.tutorialSeen === undefined || config.app.tutorialSeen === false) {
@@ -606,10 +630,8 @@ document.getElementById('btn-close-settings').addEventListener('click', () => {
     document.getElementById('settings-modal').style.display = 'none';
 });
 document.getElementById('btn-save-app-settings').addEventListener('click', () => {
-    const theme = document.getElementById('appTheme').value;
-    if(theme === 'light') document.body.classList.add('light-theme');
-    else document.body.classList.remove('light-theme');
-    
+    applyTheme(document.getElementById('appTheme').value);
+
     applyLanguage(document.getElementById('appLang').value);
     
     saveSettings(true);
