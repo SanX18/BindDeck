@@ -122,7 +122,8 @@ def git_commit_and_push(version):
         "pc_script/dist/BindDeck.exe",
         "pc_script/build/BindDeck",
     ], cwd=PROJECT_ROOT)
-    run(["git", "commit", "-m", f"release: {version}"], cwd=PROJECT_ROOT)
+    commit_message = f"release: {version}\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+    run(["git", "commit", "-m", commit_message], cwd=PROJECT_ROOT)
     run(["git", "push", "origin", "master"], cwd=PROJECT_ROOT)
 
 
