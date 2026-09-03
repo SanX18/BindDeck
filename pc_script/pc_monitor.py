@@ -82,7 +82,7 @@ APP_UPDATE_VERSION = ""
 
 # TODO: THE USER MUST CHANGE THIS TO THEIR REAL REPO (E.g., "SanX18/BindDeck")
 GITHUB_REPO = "SanX18/BindDeck"
-CURRENT_VERSION = "V1.0.0.7"
+CURRENT_VERSION = "V1.0.0.8"
 
 # Name of the app executable asset expected on each GitHub Release, alongside firmware.bin
 APP_ASSET_NAME = "BindDeck.exe"
